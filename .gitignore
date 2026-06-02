@@ -1,0 +1,46 @@
+# ── Credenciais (NUNCA commitar) ─────────────────────────────
+.env
+.env.local
+.env.test
+frontend/.env.local
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# ── Node / Next.js ────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+pnpm-lock.yaml
+
+# ── Dados e uploads ──────────────────────────────────────────
+data/uploads/
+data/output/
+*.xlsx
+*.xls
+*.csv
+!etl/categorizacao_exemplo.csv
+
+# ── Arquivos desnecessários ───────────────────────────────────
+telas/
+benchmark_results/
+.claude/
+package-lock.json
+
+# ── Supabase local ────────────────────────────────────────────
+.supabase/
+
+# ── Sistema ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

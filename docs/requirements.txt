@@ -1,0 +1,30 @@
+# MX Seguros — DRE-IA | Dependências do backend
+
+# Web framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+
+# Banco de dados
+supabase>=2.10.0
+asyncpg>=0.30.0
+
+# Autenticação
+python-jose[cryptography]>=3.3.0
+
+# Configuração
+pydantic-settings>=2.6.0
+python-dotenv>=1.0.0
+
+# ETL
+pandas>=2.2.0
+openpyxl>=3.1.0
+
+# HTTP client
+httpx>=0.27.0
+
+# IA (Fase 4)
+anthropic>=0.40.0
+
+# Testes
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
