@@ -54,7 +54,7 @@ export default function DrePage() {
     setLoading(true); setErro(null)
     Promise.all([
       api.get<DREResponse>(`/dre?inicio=${inicio}&fim=${fim}`, token),
-      api.get<ReceitaRamoResponse>(`/comissoes/receita-por-ramo?inicio=${inicio}&fim=${fim}`, token),
+      api.get<ReceitaRamoResponse>(`/dre/ramos?inicio=${inicio}&fim=${fim}`, token),
     ])
       .then(([d, r]) => { setDre(d); setRamos(r.items ?? []) })
       .catch((e) => setErro(e.message))
