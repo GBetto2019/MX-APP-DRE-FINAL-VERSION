@@ -74,15 +74,24 @@ class TenantMiddleware(BaseHTTPMiddleware):
     """
     Resolve o tenant por slug e injeta tenant_id em request.state.
     Rotas públicas (/health, /docs, /redoc, /openapi.json) ignoram.
+    Hosts de infra (vercel.app, railway.app, etc.) também ignoram — tenant_id = None.
     """
 
     _ROTAS_PUBLICAS = {"/health", "/docs", "/redoc", "/openapi.json", "/platform"}
+    _INFRA_HOSTS    = (".vercel.app", ".railway.app", ".render.com", ".fly.dev", ".onrender.com")
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
         # Ignora rotas públicas e prefixos de plataforma
         if any(path.startswith(r) for r in self._ROTAS_PUBLICAS):
+            request.state.tenant_id = None
+            return await call_next(request)
+
+        host = request.headers.get("host", "")
+
+        # Hosts de infra / localhost: sem resolução de tenant
+        if any(host.endswith(h) for h in self._INFRA_HOSTS) or host.startswith("localhost"):
             request.state.tenant_id = None
             return await call_next(request)
 
