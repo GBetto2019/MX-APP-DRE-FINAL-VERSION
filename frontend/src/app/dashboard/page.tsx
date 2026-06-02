@@ -6,7 +6,7 @@ import { fmtBRL, mesAnterior } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
 import type { DashboardResponse } from '@/types'
 
-const MESES = ['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 function nomeMes(inicio: string) {
   const d = new Date(inicio + 'T12:00:00')
@@ -27,7 +27,7 @@ function CardKPI({ label, valor, sub, iconBg, icon }: CardKPIProps) {
       <div>
         <p className="text-sm font-medium text-gray-500">{label}</p>
         <p className="mt-2 text-lg font-semibold text-[#071934]">
-          {valor != null ? fmtBRL(valor) : 'â€”'}
+          {valor != null ? fmtBRL(valor) : '—'}
         </p>
         {sub && <p className="mt-1 text-xs text-gray-400">{sub}</p>}
       </div>
@@ -93,10 +93,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* CabeÃ§alho */}
+      {/* Cabeçalho */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#071934]">VisÃ£o Geral</h1>
+          <h1 className="text-2xl font-bold text-[#071934]">Visão Geral</h1>
           {!loading && periodo && (
             <p className="mt-0.5 text-sm text-gray-500">{periodo}</p>
           )}
@@ -123,7 +123,7 @@ export default function DashboardPage() {
             <CardKPI
               label="Receita Bruta"
               valor={d.receita_bruta}
-              sub="CompetÃªncia"
+              sub="Competência"
               iconBg="bg-blue-50"
               icon={<IconTrendUp />}
             />
@@ -134,7 +134,7 @@ export default function DashboardPage() {
               icon={<IconTrendDown />}
             />
             <CardKPI
-              label="Receita LÃ­quida"
+              label="Receita Líquida"
               valor={d.receita_liquida}
               iconBg="bg-green-50"
               icon={<IconDollar />}
@@ -152,7 +152,7 @@ export default function DashboardPage() {
               icon={<IconTarget />}
             />
             <CardKPI
-              label="Resultado LÃ­quido"
+              label="Resultado Líquido"
               valor={d.resultado_liquido}
               iconBg="bg-green-50"
               icon={<IconDollar />}
@@ -160,7 +160,7 @@ export default function DashboardPage() {
           </div>
 
           <p className="text-xs text-gray-400">
-            Campos exibidos conforme seu perfil de acesso. &quot;â€”&quot; indica informaÃ§Ã£o nÃ£o disponÃ­vel para seu perfil.
+            Campos exibidos conforme seu perfil de acesso. &quot;—&quot; indica informação não disponível para seu perfil.
           </p>
 
           {/* Alertas */}

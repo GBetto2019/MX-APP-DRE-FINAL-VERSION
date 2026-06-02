@@ -38,7 +38,7 @@ export default function MetasPage() {
       ) : (
         <div className="rounded-2xl bg-white p-6 shadow-sm space-y-5">
           {(data?.items ?? []).length === 0 ? (
-            <p className="text-center py-8 text-sm text-gray-400">Nenhuma meta cadastrada para o perÃ­odo</p>
+            <p className="text-center py-8 text-sm text-gray-400">Nenhuma meta cadastrada para o período</p>
           ) : (
             (data?.items ?? []).map((meta) => (
               <div key={meta.meta_id}>
@@ -65,7 +65,7 @@ export default function MetasPage() {
                   />
                 </div>
                 {meta.atingida && (
-                  <p className="mt-1 text-xs text-green-600 font-medium">âœ“ Meta atingida</p>
+                  <p className="mt-1 text-xs text-green-600 font-medium">✓ Meta atingida</p>
                 )}
               </div>
             ))

@@ -42,7 +42,7 @@ export default function RepassesPage() {
           <input type="month" value={inicio.slice(0,7)}
             onChange={(e) => { const [y,m]=e.target.value.split('-'); setInicio(`${y}-${m}-01`) }}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 focus:outline-none" />
-          <span>AtÃ©</span>
+          <span>Até</span>
           <input type="month" value={fim.slice(0,7)}
             onChange={(e) => { const [y,m]=e.target.value.split('-'); const l=new Date(+y,+m,0).getDate(); setFim(`${y}-${m}-${l}`) }}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 focus:outline-none" />
@@ -67,7 +67,7 @@ export default function RepassesPage() {
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
                 <th className="px-5 py-3">Produtor</th>
-                <th className="px-5 py-3">CompetÃªncia</th>
+                <th className="px-5 py-3">Competência</th>
                 <th className="px-5 py-3 text-right">Valor</th>
                 <th className="px-5 py-3">Pago em</th>
                 <th className="px-5 py-3">Status</th>
@@ -76,10 +76,10 @@ export default function RepassesPage() {
             <tbody>
               {(data?.items ?? []).map((r) => (
                 <tr key={r.id} className="border-t border-gray-50 hover:bg-gray-50">
-                  <td className="px-5 py-3 font-medium">{r.produtor_nome ?? 'â€”'}</td>
+                  <td className="px-5 py-3 font-medium">{r.produtor_nome ?? '—'}</td>
                   <td className="px-5 py-3 text-gray-500">{r.competencia}</td>
                   <td className="px-5 py-3 text-right tabular-nums font-medium">{fmtBRL(r.valor)}</td>
-                  <td className="px-5 py-3 text-gray-400">{r.pago_em ?? 'â€”'}</td>
+                  <td className="px-5 py-3 text-gray-400">{r.pago_em ?? '—'}</td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COR[r.status] ?? STATUS_COR.default}`}>
                       {r.status}
@@ -88,7 +88,7 @@ export default function RepassesPage() {
                 </tr>
               ))}
               {(data?.items ?? []).length === 0 && (
-                <tr><td colSpan={5} className="py-10 text-center text-sm text-gray-400">Nenhum repasse no perÃ­odo</td></tr>
+                <tr><td colSpan={5} className="py-10 text-center text-sm text-gray-400">Nenhum repasse no período</td></tr>
               )}
             </tbody>
           </table>

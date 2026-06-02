@@ -17,8 +17,8 @@ from app.auth import UsuarioAtual
 from app.models.schemas import (
     BancoCreate, BancoItem, BancoUpdate,
     CentroCustoCreate, CentroCustoItem, CentroCustoUpdate,
-    DespesaCreate, DespesaItem, DespesasResponse,
-    ReceitaItem, ReceitaOutraCreate, ReceitasResponse,
+    DespesaCreate, DespesaItem, DespesasResponse, DespesaUpdate,
+    ReceitaItem, ReceitaOutraCreate, ReceitaOutraUpdate, ReceitasResponse,
     TipoLancamentoCreate, TipoLancamentoItem, TipoLancamentoUpdate,
 )
 
@@ -133,6 +133,7 @@ async def buscar_despesas(
     db: Client,
     centro_custo: str | None = None,
     banco_id: str | None = None,
+    status_filter: str | None = None,
 ) -> DespesasResponse:
     query = (
         db.table("despesas")
@@ -152,6 +153,8 @@ async def buscar_despesas(
         query = query.eq("centro_custo", centro_custo)
     if banco_id:
         query = query.eq("banco_id", banco_id)
+    if status_filter:
+        query = query.eq("status", status_filter)
 
     resp = query.execute()
     items = []
@@ -224,8 +227,8 @@ async def criar_despesa(
         if resp_tipo.data:
             categoria = resp_tipo.data.get("categoria")
 
-    # admin e contador entram com aprovação imediata; demais ficam pendentes
-    status_inicial = "aprovada" if usuario.role in ("admin", "contador") else "pendente"
+    # admin e gestor auto-aprovam; contador e comercial ficam pendentes para aprovação
+    status_inicial = "aprovada" if usuario.role in ("admin", "gestor") else "pendente"
 
     dados = {
         "subcategoria":  payload.subcategoria,
@@ -346,6 +349,79 @@ def _row_para_despesa_item(row: dict) -> DespesaItem:
         tipo_nome=None,
         banco_id=row.get("banco_id"),
         banco_nome=None,
+        categoria=row.get("categoria"),
+        subcategoria=row.get("subcategoria", ""),
+        descricao=row["descricao"],
+        valor=_dec(row["valor"]),
+        competencia=row["competencia"],
+        paga_em=row.get("paga_em"),
+        centro_custo=row.get("centro_custo", "matriz"),
+        recorrente=bool(row.get("recorrente", False)),
+        parcela_atual=row.get("parcela_atual"),
+        parcela_total=row.get("parcela_total"),
+        criado_em=row.get("criado_em"),
+        status=row.get("status", "pendente"),
+        criado_por=row.get("criado_por"),
+        aprovado_por=row.get("aprovado_por"),
+        aprovado_em=row.get("aprovado_em"),
+        rejeitado_motivo=row.get("rejeitado_motivo"),
+    )
+
+
+async def atualizar_despesa(despesa_id: UUID, payload: DespesaUpdate, db: Client) -> DespesaItem:
+    campos: dict = {}
+    set_fields = payload.model_fields_set
+    if "descricao" in set_fields and payload.descricao:
+        campos["descricao"] = payload.descricao
+    if "subcategoria" in set_fields and payload.subcategoria:
+        campos["subcategoria"] = payload.subcategoria
+    if "valor" in set_fields and payload.valor is not None:
+        campos["valor"] = str(payload.valor)
+    if "competencia" in set_fields and payload.competencia:
+        campos["competencia"] = payload.competencia.isoformat()
+    if "paga_em" in set_fields:
+        campos["paga_em"] = payload.paga_em.isoformat() if payload.paga_em else None
+    if "centro_custo" in set_fields and payload.centro_custo:
+        campos["centro_custo"] = payload.centro_custo
+    if "tipo_lancamento_id" in set_fields:
+        campos["tipo_lancamento_id"] = str(payload.tipo_lancamento_id) if payload.tipo_lancamento_id else None
+    if "banco_id" in set_fields:
+        campos["banco_id"] = str(payload.banco_id) if payload.banco_id else None
+
+    # Edição volta ao status pendente — precisa de nova aprovação
+    campos["status"] = "pendente"
+
+    resp = (
+        db.table("despesas")
+        .update(campos)
+        .eq("id", str(despesa_id))
+        .neq("status", "excluida")
+        .execute()
+    )
+    if not resp.data:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Despesa não encontrada.")
+
+    full = (
+        db.table("despesas")
+        .select(
+            "id, categoria, subcategoria, descricao, valor, competencia, "
+            "paga_em, centro_custo, recorrente, parcela_atual, parcela_total, "
+            "criado_em, tipo_lancamento_id, banco_id, "
+            "status, criado_por, aprovado_por, aprovado_em, rejeitado_motivo, "
+            "tipos_lancamento(nome), bancos(nome)"
+        )
+        .eq("id", str(despesa_id))
+        .single()
+        .execute()
+    )
+    row = full.data
+    return DespesaItem(
+        id=row["id"],
+        tipo_lancamento_id=row.get("tipo_lancamento_id"),
+        tipo_nome=(row.get("tipos_lancamento") or {}).get("nome"),
+        banco_id=row.get("banco_id"),
+        banco_nome=(row.get("bancos") or {}).get("nome"),
         categoria=row.get("categoria"),
         subcategoria=row.get("subcategoria", ""),
         descricao=row["descricao"],
@@ -504,6 +580,56 @@ async def criar_receita_outra(
         tipo_nome=tipo_nome,
         banco_id=row.get("banco_id"),
         banco_nome=banco_nome,
+        descricao=row["descricao"],
+        valor=_dec(row["valor"]),
+        competencia=row["competencia"],
+        recebido_em=row.get("recebido_em"),
+        centro_custo=row.get("centro_custo", "matriz"),
+        observacao=row.get("observacao"),
+    )
+
+
+async def atualizar_receita_outra(receita_id: UUID, payload: ReceitaOutraUpdate, db: Client) -> ReceitaItem:
+    campos: dict = {}
+    set_fields = payload.model_fields_set
+    if "descricao" in set_fields and payload.descricao:
+        campos["descricao"] = payload.descricao
+    if "valor" in set_fields and payload.valor is not None:
+        campos["valor"] = str(payload.valor)
+    if "competencia" in set_fields and payload.competencia:
+        campos["competencia"] = payload.competencia.isoformat()
+    if "recebido_em" in set_fields:
+        campos["recebido_em"] = payload.recebido_em.isoformat() if payload.recebido_em else None
+    if "centro_custo" in set_fields and payload.centro_custo:
+        campos["centro_custo"] = payload.centro_custo
+    if "observacao" in set_fields:
+        campos["observacao"] = payload.observacao
+    if "tipo_lancamento_id" in set_fields:
+        campos["tipo_lancamento_id"] = str(payload.tipo_lancamento_id) if payload.tipo_lancamento_id else None
+    if "banco_id" in set_fields:
+        campos["banco_id"] = str(payload.banco_id) if payload.banco_id else None
+
+    resp = db.table("receitas_outras").update(campos).eq("id", str(receita_id)).execute()
+    if not resp.data:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Receita não encontrada.")
+
+    full = (
+        db.table("receitas_outras")
+        .select("id, descricao, valor, competencia, recebido_em, centro_custo, "
+                "observacao, tipo_lancamento_id, banco_id, tipos_lancamento(nome), bancos(nome)")
+        .eq("id", str(receita_id))
+        .single()
+        .execute()
+    )
+    row = full.data
+    return ReceitaItem(
+        id=row["id"],
+        origem="manual",
+        tipo_lancamento_id=row.get("tipo_lancamento_id"),
+        tipo_nome=(row.get("tipos_lancamento") or {}).get("nome"),
+        banco_id=row.get("banco_id"),
+        banco_nome=(row.get("bancos") or {}).get("nome"),
         descricao=row["descricao"],
         valor=_dec(row["valor"]),
         competencia=row["competencia"],

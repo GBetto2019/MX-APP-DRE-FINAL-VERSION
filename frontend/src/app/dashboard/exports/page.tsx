@@ -41,14 +41,14 @@ export default function ExportsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-mx-navy">ExportaÃ§Ãµes</h1>
+      <h1 className="text-xl font-bold text-mx-navy">Exportações</h1>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
         <h2 className="font-semibold text-gray-800">Exportar DRE</h2>
 
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600">InÃ­cio</label>
+            <label className="block text-xs font-medium text-gray-600">Início</label>
             <input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)}
               className="mt-1 rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-mx-blue focus:outline-none" />
           </div>
@@ -67,14 +67,14 @@ export default function ExportsPage() {
             disabled={!!loading}
             className="rounded-lg border border-mx-navy px-5 py-2 text-sm font-medium text-mx-navy hover:bg-mx-light disabled:opacity-50"
           >
-            {loading === 'xlsx' ? 'Gerandoâ€¦' : 'â¬‡ Excel (.xlsx)'}
+            {loading === 'xlsx' ? 'Gerando…' : '⬇ Excel (.xlsx)'}
           </button>
           <button
             onClick={() => baixar('pdf')}
             disabled={!!loading}
             className="rounded-lg bg-mx-navy px-5 py-2 text-sm font-medium text-white hover:bg-mx-blue disabled:opacity-50"
           >
-            {loading === 'pdf' ? 'Gerandoâ€¦' : 'â¬‡ PDF'}
+            {loading === 'pdf' ? 'Gerando…' : '⬇ PDF'}
           </button>
         </div>
       </div>

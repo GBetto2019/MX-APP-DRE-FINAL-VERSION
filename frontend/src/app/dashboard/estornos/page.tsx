@@ -37,7 +37,7 @@ export default function EstornosPage() {
           <input type="month" value={inicio.slice(0,7)}
             onChange={(e) => { const [y,m]=e.target.value.split('-'); setInicio(`${y}-${m}-01`) }}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 focus:outline-none" />
-          <span>AtÃ©</span>
+          <span>Até</span>
           <input type="month" value={fim.slice(0,7)}
             onChange={(e) => { const [y,m]=e.target.value.split('-'); const l=new Date(+y,+m,0).getDate(); setFim(`${y}-${m}-${l}`) }}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 focus:outline-none" />
@@ -47,7 +47,7 @@ export default function EstornosPage() {
 
       {data?.alerta_5pct && (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-          âš  Taxa de estorno acima de 5% ({(data.taxa_estorno * 100).toFixed(1)}%)
+          ⚠ Taxa de estorno acima de 5% ({(data.taxa_estorno * 100).toFixed(1)}%)
         </div>
       )}
 
@@ -62,8 +62,8 @@ export default function EstornosPage() {
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
                   <th className="px-5 py-3">Seguradora</th>
-                  <th className="px-5 py-3">CompetÃªncia Original</th>
-                  <th className="px-5 py-3">CompetÃªncia Estorno</th>
+                  <th className="px-5 py-3">Competência Original</th>
+                  <th className="px-5 py-3">Competência Estorno</th>
                   <th className="px-5 py-3">Motivo</th>
                   <th className="px-5 py-3 text-right">Valor</th>
                 </tr>
@@ -71,15 +71,15 @@ export default function EstornosPage() {
               <tbody>
                 {(data?.items ?? []).map((e) => (
                   <tr key={e.id} className="border-t border-gray-50 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium">{e.seguradora_nome ?? 'â€”'}</td>
+                    <td className="px-5 py-3 font-medium">{e.seguradora_nome ?? '—'}</td>
                     <td className="px-5 py-3 text-gray-500">{e.competencia_original}</td>
                     <td className="px-5 py-3 text-gray-500">{e.competencia_estorno}</td>
-                    <td className="px-5 py-3 text-gray-500">{e.motivo ?? 'â€”'}</td>
+                    <td className="px-5 py-3 text-gray-500">{e.motivo ?? '—'}</td>
                     <td className="px-5 py-3 text-right font-medium text-red-500 tabular-nums">{fmtBRL(e.valor)}</td>
                   </tr>
                 ))}
                 {(data?.items ?? []).length === 0 && (
-                  <tr><td colSpan={5} className="py-10 text-center text-sm text-gray-400">Nenhum estorno no perÃ­odo</td></tr>
+                  <tr><td colSpan={5} className="py-10 text-center text-sm text-gray-400">Nenhum estorno no período</td></tr>
                 )}
               </tbody>
             </table>

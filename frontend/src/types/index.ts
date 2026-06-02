@@ -73,3 +73,36 @@ export interface UsuarioItem {
   produtor_id: string | null
   ativo: boolean
 }
+
+export type StatusDespesa = 'pendente' | 'aprovada' | 'rejeitada'
+
+export interface Despesa {
+  id: string
+  tipo_lancamento_id: string | null
+  tipo_nome: string | null
+  banco_id: string | null
+  banco_nome: string | null
+  categoria: string | null
+  subcategoria: string
+  descricao: string
+  valor: number
+  competencia: string
+  paga_em: string | null
+  centro_custo: string
+  recorrente: boolean
+  parcela_atual: number | null
+  parcela_total: number | null
+  criado_em: string | null
+  status: StatusDespesa
+  criado_por: string | null
+  aprovado_por: string | null
+  aprovado_em: string | null
+  rejeitado_motivo: string | null
+}
+
+export interface DespesasResponse {
+  total: number
+  items: Despesa[]
+  soma_total: number
+  total_pendentes: number
+}

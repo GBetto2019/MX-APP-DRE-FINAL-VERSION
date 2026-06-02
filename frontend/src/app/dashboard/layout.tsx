@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { UserContext } from '@/contexts/UserContext'
 import type { Usuario } from '@/types'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -43,13 +44,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const nome = usuario?.nome ?? ''
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F0F2F5]">
-      <Sidebar role={role} email={email} nome={nome} onSignOut={handleSignOut} />
-      <main className="flex-1 overflow-auto p-8">
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-      </main>
-    </div>
+    <UserContext.Provider value={{ role: role as import('@/types').Role, nome, email }}>
+      <div className="flex h-screen overflow-hidden bg-[#F0F2F5]">
+        <Sidebar role={role} email={email} nome={nome} onSignOut={handleSignOut} />
+        <main className="flex-1 overflow-auto p-8">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </main>
+      </div>
+    </UserContext.Provider>
   )
 }

@@ -23,7 +23,7 @@ const UserIcon = () => (
 
 const MSG_BOAS_VINDAS: ChatMensagem = {
   role: 'assistant',
-  content: 'OlÃ¡! Sou o assistente de DRE da MX Seguros. Posso ajudar com anÃ¡lises financeiras, comparativos de perÃ­odos, receita por ramo, estornos, metas e muito mais. O que vocÃª gostaria de saber?',
+  content: 'Olá! Sou o assistente de DRE da MX Seguros. Posso ajudar com análises financeiras, comparativos de períodos, receita por ramo, estornos, metas e muito mais. O que você gostaria de saber?',
 }
 
 export default function AssistentePage() {
@@ -58,7 +58,7 @@ export default function AssistentePage() {
       const res = await fetch(`${BASE}/chat/stream?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.body) throw new Error('Stream indisponÃ­vel')
+      if (!res.body) throw new Error('Stream indisponível')
       const reader = res.body.getReader()
       const dec = new TextDecoder()
       while (true) {
@@ -95,10 +95,10 @@ export default function AssistentePage() {
     <div className="flex h-full flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-[#071934]">Assistente IA</h1>
-        <p className="text-sm text-gray-500">AnÃ¡lises inteligentes do seu DRE â€” pergunte em portuguÃªs</p>
+        <p className="text-sm text-gray-500">Análises inteligentes do seu DRE — pergunte em português</p>
       </div>
 
-      {/* Ãrea de mensagens */}
+      {/* Área de mensagens */}
       <div className="flex-1 overflow-y-auto rounded-2xl bg-white p-6 shadow-sm">
         <div className="space-y-5">
           {mensagens.map((msg, i) => (
@@ -111,9 +111,9 @@ export default function AssistentePage() {
               }`}>
                 {msg.content || (streaming && msg.role === 'assistant' ? (
                   <span className="flex gap-1">
-                    <span className="animate-bounce">Â·</span>
-                    <span className="animate-bounce" style={{ animationDelay: '0.1s' }}>Â·</span>
-                    <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>Â·</span>
+                    <span className="animate-bounce">·</span>
+                    <span className="animate-bounce" style={{ animationDelay: '0.1s' }}>·</span>
+                    <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>·</span>
                   </span>
                 ) : '')}
               </div>

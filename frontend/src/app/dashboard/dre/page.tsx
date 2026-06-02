@@ -14,13 +14,13 @@ const LINHAS: { key: keyof LinhasDRE; label: string; total?: boolean; deducao?: 
   { key: 'receita_bruta',             label: 'Receita Bruta',             total: true },
   { key: 'estornos',                  label: '(-) Estornos',              deducao: true },
   { key: 'impostos',                  label: '(-) Impostos',              deducao: true },
-  { key: 'receita_liquida',           label: '= Receita LÃ­quida',         total: true },
+  { key: 'receita_liquida',           label: '= Receita Líquida',         total: true },
   { key: 'repasses_produtores',       label: '(-) Repasses Produtores',   deducao: true },
-  { key: 'margem_contribuicao',       label: '= Margem de ContribuiÃ§Ã£o',  total: true },
+  { key: 'margem_contribuicao',       label: '= Margem de Contribuição',  total: true },
   { key: 'despesas_fixas',            label: '(-) Despesas Fixas',        deducao: true },
   { key: 'ebitda',                    label: '= EBITDA',                  total: true },
-  { key: 'despesas_nao_operacionais', label: '(-) Desp. NÃ£o Operacionais',deducao: true },
-  { key: 'resultado_liquido',         label: '= Resultado LÃ­quido',       total: true },
+  { key: 'despesas_nao_operacionais', label: '(-) Desp. Não Operacionais',deducao: true },
+  { key: 'resultado_liquido',         label: '= Resultado Líquido',       total: true },
 ]
 
 function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
@@ -65,12 +65,12 @@ export default function DrePage() {
 
   return (
     <div className="space-y-6">
-      {/* CabeÃ§alho */}
+      {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#071934]">DRE</h1>
         <div className="flex items-center gap-4">
           <DateInput label="De"  value={inicio} onChange={(v) => setPeriodo([v, fim])} />
-          <DateInput label="AtÃ©" value={fim}    onChange={(v) => setPeriodo([inicio, v])} />
+          <DateInput label="Até" value={fim}    onChange={(v) => setPeriodo([inicio, v])} />
           <button onClick={buscar} className="rounded-lg bg-[#071934] px-4 py-2 text-sm font-medium text-white hover:bg-[#0E2444]">
             Consultar
           </button>
@@ -88,7 +88,7 @@ export default function DrePage() {
         <div className="grid grid-cols-2 gap-4">
           {/* Tabela DRE */}
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-semibold text-[#071934]">DemonstraÃ§Ã£o de Resultados</h2>
+            <h2 className="mb-4 font-semibold text-[#071934]">Demonstração de Resultados</h2>
             <table className="w-full text-sm">
               <tbody>
                 {LINHAS.map(({ key, label, total, deducao }) => {
@@ -115,7 +115,7 @@ export default function DrePage() {
             </table>
           </div>
 
-          {/* GrÃ¡fico receita por ramo */}
+          {/* Gráfico receita por ramo */}
           <div className="rounded-2xl bg-white p-6 shadow-sm">
             <h2 className="mb-4 font-semibold text-[#071934]">Receita por Ramo</h2>
             {ramos.length > 0 ? (
@@ -129,7 +129,7 @@ export default function DrePage() {
               </ResponsiveContainer>
             ) : (
               <div className="flex h-64 items-center justify-center text-sm text-gray-400">
-                Sem dados de receita por ramo no perÃ­odo
+                Sem dados de receita por ramo no período
               </div>
             )}
           </div>

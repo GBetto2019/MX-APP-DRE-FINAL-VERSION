@@ -372,11 +372,47 @@ class DespesasResponse(RespostaBase):
     total_pendentes:    int = 0
 
 
+class DespesaUpdate(RespostaBase):
+    tipo_lancamento_id: UUID | None = None
+    banco_id:           UUID | None = None
+    descricao:          str | None = Field(default=None, min_length=3, max_length=500)
+    subcategoria:       str | None = Field(default=None, min_length=1, max_length=100)
+    valor:              Decimal | None = Field(default=None, ge=0, le=99_999_999.99)
+    competencia:        date | None = None
+    paga_em:            date | None = None
+    centro_custo:       str | None = None
+
+    @field_validator("centro_custo")
+    @classmethod
+    def centro_custo_valido(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("matriz", "aguas_lindoia"):
+            raise ValueError("centro_custo deve ser 'matriz' ou 'aguas_lindoia'.")
+        return v
+
+
 class DespesaAprovacaoRejeicao(RespostaBase):
     motivo: str | None = None   # obrigatório para rejeição
 
 
 # ── LANÇAMENTOS: RECEITAS ─────────────────────────────────────
+
+class ReceitaOutraUpdate(RespostaBase):
+    tipo_lancamento_id: UUID | None = None
+    banco_id:           UUID | None = None
+    centro_custo:       str | None = None
+    descricao:          str | None = Field(default=None, min_length=3, max_length=500)
+    valor:              Decimal | None = Field(default=None, ge=0, le=99_999_999.99)
+    competencia:        date | None = None
+    recebido_em:        date | None = None
+    observacao:         str | None = Field(default=None, max_length=1000)
+
+    @field_validator("centro_custo")
+    @classmethod
+    def centro_custo_valido(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("matriz", "aguas_lindoia"):
+            raise ValueError("centro_custo deve ser 'matriz' ou 'aguas_lindoia'.")
+        return v
+
 
 class ReceitaOutraCreate(RespostaBase):
     tipo_lancamento_id: UUID | None = None
