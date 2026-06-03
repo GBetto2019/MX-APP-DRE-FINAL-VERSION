@@ -26,7 +26,7 @@ const LINHAS: { key: keyof LinhasDRE; label: string; total?: boolean; deducao?: 
 function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-500">{label}</span>
+      <span className="w-6 shrink-0 text-sm text-gray-500">{label}</span>
       <input
         type="month"
         value={value.slice(0, 7)}
@@ -35,7 +35,7 @@ function DateInput({ label, value, onChange }: { label: string; value: string; o
           const lastDay = new Date(Number(y), Number(m), 0).getDate()
           onChange(label === 'De' ? `${y}-${m}-01` : `${y}-${m}-${lastDay}`)
         }}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-[#071934] focus:outline-none"
+        className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-[#071934] focus:outline-none"
       />
     </div>
   )
@@ -66,29 +66,30 @@ export default function DrePage() {
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#071934]">DRE</h1>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <h1 className="text-xl font-bold text-[#071934] md:text-2xl">DRE</h1>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <DateInput label="De"  value={inicio} onChange={(v) => setPeriodo([v, fim])} />
           <DateInput label="Até" value={fim}    onChange={(v) => setPeriodo([inicio, v])} />
-          <button onClick={buscar} className="rounded-lg bg-[#071934] px-4 py-2 text-sm font-medium text-white hover:bg-[#0E2444]">
+          <button onClick={buscar} className="w-full rounded-lg bg-[#071934] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0E2444] sm:w-auto">
             Consultar
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Skeleton variant="table" className="h-80" />
           <Skeleton variant="card" className="h-80" />
         </div>
       ) : erro ? (
         <p className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{erro}</p>
       ) : dre ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Tabela DRE */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="overflow-hidden rounded-2xl bg-white p-4 shadow-sm md:p-6">
             <h2 className="mb-4 font-semibold text-[#071934]">Demonstração de Resultados</h2>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <tbody>
                 {LINHAS.map(({ key, label, total, deducao }) => {
@@ -113,15 +114,16 @@ export default function DrePage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* Gráfico receita por ramo */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="rounded-2xl bg-white p-4 shadow-sm md:p-6">
             <h2 className="mb-4 font-semibold text-[#071934]">Receita por Ramo</h2>
             {ramos.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={ramos} margin={{ left: -10 }}>
-                  <XAxis dataKey="ramo_nome" tick={{ fontSize: 11 }} />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={ramos} margin={{ left: -10, bottom: 10 }}>
+                  <XAxis dataKey="ramo_nome" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={55} interval={0} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v: number) => fmtBRL(v)} />
                   <Bar dataKey="receita_total" fill="#071934" radius={[4,4,0,0]} name="Receita" />

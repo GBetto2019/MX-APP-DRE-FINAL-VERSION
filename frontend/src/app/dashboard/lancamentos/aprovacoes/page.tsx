@@ -98,7 +98,7 @@ function KanbanColuna({
   titulo: string; contagem: number; cor: string; corTexto: string; children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col min-w-0">
+    <div className="flex w-[calc(100vw-2rem)] shrink-0 snap-start flex-col sm:w-auto sm:min-w-0">
       <div className={`mb-3 flex items-center justify-between rounded-xl px-4 py-2.5 ${cor}`}>
         <h3 className={`text-sm font-semibold ${corTexto}`}>{titulo}</h3>
         <span className={`rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-bold ${corTexto}`}>
@@ -107,7 +107,7 @@ function KanbanColuna({
       </div>
       <div
         className="flex-1 space-y-3 overflow-y-auto pr-1"
-        style={{ maxHeight: 'calc(100vh - 230px)' }}
+        style={{ maxHeight: 'calc(100vh - 260px)' }}
       >
         {children}
       </div>
@@ -128,8 +128,8 @@ function ModalRejeicao({
   const [motivo, setMotivo] = useState('')
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
+      <div className="w-full rounded-t-2xl bg-white p-4 shadow-xl sm:max-w-md sm:rounded-2xl sm:p-6">
         <h3 className="text-base font-bold text-[#071934]">Rejeitar Despesa</h3>
         <p className="mt-1 text-sm text-gray-500">Informe o motivo da rejeição. O lançador será notificado.</p>
 
@@ -245,14 +245,14 @@ export default function AprovacoesPage() {
 
       <div className="flex flex-col space-y-4">
         {/* Cabeçalho */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Link href="/dashboard/lancamentos" className="text-sm text-gray-400 hover:text-gray-600">
                 Lançamentos
               </Link>
               <span className="text-gray-300">/</span>
-              <h1 className="text-2xl font-bold text-[#071934]">Aprovação de Despesas</h1>
+              <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Aprovação de Despesas</h1>
             </div>
             <p className="mt-0.5 text-sm text-gray-500">Fluxo de aprovação para despesas lançadas pela equipe</p>
           </div>
@@ -260,7 +260,7 @@ export default function AprovacoesPage() {
             type="month"
             value={mes}
             onChange={(e) => setMes(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm focus:outline-none"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none sm:py-1.5"
           />
         </div>
 
@@ -273,7 +273,7 @@ export default function AprovacoesPage() {
         )}
 
         {/* Resumo rápido */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           {[
             { label: 'Total Lançadas',  valor: todas.length,      extra: '',                         cor: 'bg-slate-50  border-slate-200  text-slate-700' },
             { label: 'Pendentes',       valor: pendentes.length,   extra: '',                         cor: 'bg-amber-50  border-amber-200  text-amber-800' },
@@ -294,7 +294,7 @@ export default function AprovacoesPage() {
           </div>
         ) : (
           // ── Kanban ──────────────────────────────────────────
-          <div className="grid grid-cols-4 gap-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
 
             {/* Coluna 1 — Lançadas (todas) */}
             <KanbanColuna

@@ -23,15 +23,15 @@ interface CardKPIProps {
 
 function CardKPI({ label, valor, sub, iconBg, icon }: CardKPIProps) {
   return (
-    <div className="flex items-start justify-between rounded-2xl bg-white p-5 shadow-sm">
+    <div className="flex items-start justify-between rounded-2xl bg-white p-4 shadow-sm sm:p-5">
       <div>
         <p className="text-sm font-medium text-gray-500">{label}</p>
-        <p className="mt-2 text-lg font-semibold text-[#071934]">
+        <p className="mt-2 text-xl font-semibold text-[#071934]">
           {valor != null ? fmtBRL(valor) : '—'}
         </p>
         {sub && <p className="mt-1 text-xs text-gray-400">{sub}</p>}
       </div>
-      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
         {icon}
       </div>
     </div>
@@ -94,23 +94,23 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#071934]">Visão Geral</h1>
+          <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Visão Geral</h1>
           {!loading && periodo && (
             <p className="mt-0.5 text-sm text-gray-500">{periodo}</p>
           )}
         </div>
         <button
           onClick={buscar}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50"
+          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50"
         >
           <IconRefresh /> Atualizar
         </button>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} variant="card" />
           ))}
@@ -119,7 +119,7 @@ export default function DashboardPage() {
         <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{erro}</div>
       ) : d ? (
         <>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <CardKPI
               label="Receita Bruta"
               valor={d.receita_bruta}

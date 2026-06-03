@@ -350,7 +350,7 @@ export default function AjudaPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       {/* Cabeçalho */}
       <div>
-        <h1 className="text-2xl font-bold text-[#071934]">Central de Ajuda</h1>
+        <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Central de Ajuda</h1>
         <p className="mt-0.5 text-sm text-gray-500">Respostas rápidas sobre o sistema. Para dúvidas mais detalhadas, use o Assistente IA.</p>
       </div>
 

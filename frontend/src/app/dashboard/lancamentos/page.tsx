@@ -145,8 +145,8 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl sm:max-w-lg sm:rounded-2xl sm:p-6">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[#071934]">{editando ? 'Editar Despesa' : 'Nova Despesa'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -163,7 +163,7 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
         )}
 
         <form onSubmit={salvar} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Campo label="Tipo de lançamento">
               <select value={form.tipo_lancamento_id} onChange={e => set('tipo_lancamento_id', e.target.value)} className={selectCls}>
                 <option value="">Selecionar tipo</option>
@@ -185,7 +185,7 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
               placeholder="Ex: Aluguel sede matriz" className={inputCls} />
           </Campo>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Campo label="Valor (R$) *">
               <input required type="number" step="0.01" min="0" value={form.valor}
                 onChange={e => set('valor', e.target.value)} placeholder="0,00" className={inputCls} />
@@ -196,7 +196,7 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
             </Campo>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Campo label="Centro de custo">
               <select value={form.centro_custo} onChange={e => set('centro_custo', e.target.value)} className={selectCls}>
                 <option value="matriz">Matriz</option>
@@ -284,8 +284,8 @@ function ModalReceita({ token, tipos, bancos, receita, onClose, onSaved }: Modal
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4">
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl sm:max-w-lg sm:rounded-2xl sm:p-6">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[#071934]">{editando ? 'Editar Receita' : 'Nova Receita'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -296,7 +296,7 @@ function ModalReceita({ token, tipos, bancos, receita, onClose, onSaved }: Modal
         </div>
 
         <form onSubmit={salvar} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Campo label="Tipo de lançamento">
               <select value={form.tipo_lancamento_id} onChange={e => set('tipo_lancamento_id', e.target.value)} className={selectCls}>
                 <option value="">Selecionar tipo</option>
@@ -318,7 +318,7 @@ function ModalReceita({ token, tipos, bancos, receita, onClose, onSaved }: Modal
               placeholder="Ex: Comissão extra" className={inputCls} />
           </Campo>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Campo label="Valor (R$) *">
               <input required type="number" step="0.01" min="0" value={form.valor}
                 onChange={e => set('valor', e.target.value)} placeholder="0,00" className={inputCls} />
@@ -329,7 +329,7 @@ function ModalReceita({ token, tipos, bancos, receita, onClose, onSaved }: Modal
             </Campo>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <Campo label="Centro de custo">
               <select value={form.centro_custo} onChange={e => set('centro_custo', e.target.value)} className={selectCls}>
                 <option value="matriz">Matriz</option>
@@ -489,68 +489,68 @@ export default function LancamentosPage() {
 
       <div className="space-y-6">
         {/* Cabeçalho */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#071934]">Lançamentos</h1>
+            <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Lançamentos</h1>
             <p className="mt-0.5 text-sm text-gray-500">Despesas e receitas por centro de custo e banco</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>De</span>
+              <span className="shrink-0">De</span>
               <input type="month" value={mes} onChange={(e) => setMes(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm focus:outline-none" />
-              <span>Até</span>
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none" />
+              <span className="shrink-0">Até</span>
               <input type="month" value={mes} onChange={(e) => setMes(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm focus:outline-none" />
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none" />
             </div>
             <button
               onClick={() => aba === 'despesas' ? setModalDespesa(true) : setModalReceita(true)}
-              className="flex items-center gap-1 rounded-lg bg-[#071934] px-4 py-2 text-sm font-medium text-white hover:bg-[#0E2444]">
+              className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#071934] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0E2444] sm:w-auto">
               + {aba === 'despesas' ? 'Nova Despesa' : 'Nova Receita'}
             </button>
           </div>
         </div>
 
         {/* Cards resumo */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-red-500">
-                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
-              </svg>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="rounded-2xl bg-white p-3 shadow-sm sm:p-4">
+            <div className="flex items-center gap-2">
+              <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 sm:flex">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-red-500">
+                  <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
+                </svg>
+              </div>
+              <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Total Despesas</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">Total Despesas</p>
-              {loadingDespesas
-                ? <div className="mt-1 h-5 w-24 animate-pulse rounded bg-gray-100" />
-                : <p className="text-base font-bold text-red-500">{fmtBRL(totalDespesas)}</p>}
-            </div>
+            {loadingDespesas
+              ? <div className="mt-1.5 h-4 w-full animate-pulse rounded bg-gray-100 sm:h-5" />
+              : <p className="mt-1 text-xs font-bold tabular-nums text-red-500 sm:text-base">{fmtBRL(totalDespesas)}</p>}
           </div>
-          <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-50">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-green-500">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
-              </svg>
+          <div className="rounded-2xl bg-white p-3 shadow-sm sm:p-4">
+            <div className="flex items-center gap-2">
+              <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-50 sm:flex">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-green-500">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+                </svg>
+              </div>
+              <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Total Receitas</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">Total Receitas</p>
-              {loadingReceitas
-                ? <div className="mt-1 h-5 w-24 animate-pulse rounded bg-gray-100" />
-                : <p className="text-base font-bold text-green-600">{fmtBRL(totalReceitas)}</p>}
-            </div>
+            {loadingReceitas
+              ? <div className="mt-1.5 h-4 w-full animate-pulse rounded bg-gray-100 sm:h-5" />
+              : <p className="mt-1 text-xs font-bold tabular-nums text-green-600 sm:text-base">{fmtBRL(totalReceitas)}</p>}
           </div>
-          <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-blue-600">
-                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
+          <div className="rounded-2xl bg-white p-3 shadow-sm sm:p-4">
+            <div className="flex items-center gap-2">
+              <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 sm:flex">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-blue-600">
+                  <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+              </div>
+              <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Saldo do Período</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">Saldo do Período</p>
-              {loadingDespesas || loadingReceitas
-                ? <div className="mt-1 h-5 w-24 animate-pulse rounded bg-gray-100" />
-                : <p className={`text-base font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-500'}`}>{fmtBRL(saldo)}</p>}
-            </div>
+            {loadingDespesas || loadingReceitas
+              ? <div className="mt-1.5 h-4 w-full animate-pulse rounded bg-gray-100 sm:h-5" />
+              : <p className={`mt-1 text-xs font-bold tabular-nums sm:text-base ${saldo >= 0 ? 'text-green-600' : 'text-red-500'}`}>{fmtBRL(saldo)}</p>}
           </div>
         </div>
 
@@ -580,23 +580,23 @@ export default function LancamentosPage() {
 
         {/* Tabela */}
         <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
+          <div className="flex flex-col gap-2 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="flex gap-1">
               <button onClick={() => setAba('despesas')}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium ${aba === 'despesas' ? 'bg-red-50 text-red-600' : 'text-gray-500 hover:bg-gray-50'}`}>
+                className={`rounded-lg px-3 py-2 text-sm font-medium sm:px-4 ${aba === 'despesas' ? 'bg-red-50 text-red-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                 Despesas {despesas ? `(${despesas.total})` : ''}
               </button>
               <button onClick={() => setAba('receitas')}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium ${aba === 'receitas' ? 'bg-green-50 text-green-600' : 'text-gray-500 hover:bg-gray-50'}`}>
+                className={`rounded-lg px-3 py-2 text-sm font-medium sm:px-4 ${aba === 'receitas' ? 'bg-green-50 text-green-600' : 'text-gray-500 hover:bg-gray-50'}`}>
                 Receitas {receitas ? `(${receitas.total})` : ''}
               </button>
             </div>
             <div className="flex gap-2">
-              <select className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 focus:outline-none">
+              <select className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 focus:outline-none sm:flex-none sm:py-1.5">
                 <option>Todos os bancos</option>
                 {bancos.map(b => <option key={b.id}>{b.nome}</option>)}
               </select>
-              <select className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 focus:outline-none">
+              <select className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 focus:outline-none sm:flex-none sm:py-1.5">
                 <option>Todos os centros</option>
                 <option value="matriz">Matriz</option>
                 <option value="aguas_lindoia">Águas Lindoia</option>
@@ -607,34 +607,32 @@ export default function LancamentosPage() {
           {(aba === 'despesas' ? loadingDespesas : loadingReceitas) ? (
             <div className="p-5"><Skeleton variant="table" /></div>
           ) : aba === 'despesas' ? (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
-                  <th className="px-5 py-3">Competência</th>
-                  <th className="px-5 py-3">Tipo</th>
-                  <th className="px-5 py-3">Descrição</th>
-                  <th className="px-5 py-3">Centro</th>
-                  <th className="px-5 py-3">Banco</th>
-                  <th className="px-5 py-3 text-right">Valor</th>
-                  <th className="px-5 py-3">Pago em</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-3 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {(despesas?.items ?? []).map((d) => (
-                  <tr key={d.id} className="border-t border-gray-50 hover:bg-gray-50">
-                    <td className="px-5 py-3 text-gray-600">{fmtCompetencia(d.competencia)}</td>
-                    <td className="px-5 py-3">
-                      <Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} />
-                    </td>
-                    <td className="px-5 py-3 text-gray-700">{d.descricao}</td>
-                    <td className="px-5 py-3 capitalize text-gray-600">{d.centro_custo.replace('_', ' ')}</td>
-                    <td className="px-5 py-3 text-gray-600">{d.banco_nome ?? '—'}</td>
-                    <td className="px-5 py-3 text-right font-medium tabular-nums text-red-500">{fmtBRL(d.valor)}</td>
-                    <td className="px-5 py-3 text-gray-400">{d.paga_em ?? '—'}</td>
-                    <td className="px-5 py-3"><StatusBadge status={d.status} /></td>
-                    <td className="px-3 py-3 text-right">
+            <>
+              {/* Mobile: card list */}
+              <div className="divide-y divide-gray-50 sm:hidden">
+                {(despesas?.items ?? []).length === 0 ? (
+                  <p className="py-10 text-center text-sm text-gray-400">Nenhuma despesa no período</p>
+                ) : (despesas?.items ?? []).map((d) => (
+                  <div key={d.id} className="px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-800">{d.descricao}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} />
+                          <StatusBadge status={d.status} />
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold tabular-nums text-red-500">{fmtBRL(d.valor)}</p>
+                        <p className="mt-0.5 text-xs text-gray-400">{fmtCompetencia(d.competencia)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-gray-400 capitalize">
+                        {d.centro_custo.replace('_', ' ')}
+                        {d.banco_nome ? ` · ${d.banco_nome}` : ''}
+                        {d.paga_em ? ` · Pago ${d.paga_em}` : ''}
+                      </p>
                       {confirmandoId === d.id ? (
                         <span className="inline-flex items-center gap-2">
                           <button onClick={() => deletarDespesa(d.id)} disabled={deletando}
@@ -642,65 +640,112 @@ export default function LancamentosPage() {
                             {deletando ? 'Excluindo…' : 'Confirmar'}
                           </button>
                           <span className="text-gray-300">|</span>
-                          <button onClick={() => setConfirmandoId(null)}
-                            className="text-xs text-gray-400 hover:text-gray-600">
-                            Cancelar
-                          </button>
+                          <button onClick={() => setConfirmandoId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-2">
-                          <button onClick={() => setEditandoDespesa(d)}
-                            className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar">
-                            <IconLapis />
-                          </button>
-                          <button onClick={() => setConfirmandoId(d.id)}
-                            className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir">
-                            <IconLixo />
-                          </button>
+                          <button onClick={() => setEditandoDespesa(d)} className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"><IconLapis /></button>
+                          <button onClick={() => setConfirmandoId(d.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-                {(despesas?.items ?? []).length === 0 && (
-                  <tr><td colSpan={9} className="py-10 text-center text-sm text-gray-400">Nenhuma despesa no período</td></tr>
+                {(despesas?.soma_total ?? 0) > 0 && (
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm font-semibold text-gray-700">Total</span>
+                    <span className="text-sm font-bold tabular-nums text-red-500">{fmtBRL(despesas!.soma_total)}</span>
+                  </div>
                 )}
-              </tbody>
-              {(despesas?.soma_total ?? 0) > 0 && (
-                <tfoot>
-                  <tr className="border-t-2 border-gray-100">
-                    <td colSpan={5} className="px-5 py-3 font-semibold text-gray-700">Total</td>
-                    <td className="px-5 py-3 text-right font-bold tabular-nums text-red-500">{fmtBRL(despesas!.soma_total)}</td>
-                    <td colSpan={3} />
-                  </tr>
-                </tfoot>
-              )}
-            </table>
+              </div>
+              {/* Desktop: table */}
+              <div className="hidden overflow-x-auto sm:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
+                      <th className="px-5 py-3">Competência</th>
+                      <th className="px-5 py-3">Tipo</th>
+                      <th className="px-5 py-3">Descrição</th>
+                      <th className="px-5 py-3">Centro</th>
+                      <th className="px-5 py-3">Banco</th>
+                      <th className="px-5 py-3 text-right">Valor</th>
+                      <th className="px-5 py-3">Pago em</th>
+                      <th className="px-5 py-3">Status</th>
+                      <th className="px-3 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(despesas?.items ?? []).map((d) => (
+                      <tr key={d.id} className="border-t border-gray-50 hover:bg-gray-50">
+                        <td className="px-5 py-3 text-gray-600">{fmtCompetencia(d.competencia)}</td>
+                        <td className="px-5 py-3"><Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} /></td>
+                        <td className="px-5 py-3 text-gray-700">{d.descricao}</td>
+                        <td className="px-5 py-3 capitalize text-gray-600">{d.centro_custo.replace('_', ' ')}</td>
+                        <td className="px-5 py-3 text-gray-600">{d.banco_nome ?? '—'}</td>
+                        <td className="px-5 py-3 text-right font-medium tabular-nums text-red-500">{fmtBRL(d.valor)}</td>
+                        <td className="px-5 py-3 text-gray-400">{d.paga_em ?? '—'}</td>
+                        <td className="px-5 py-3"><StatusBadge status={d.status} /></td>
+                        <td className="px-3 py-3 text-right">
+                          {confirmandoId === d.id ? (
+                            <span className="inline-flex items-center gap-2">
+                              <button onClick={() => deletarDespesa(d.id)} disabled={deletando}
+                                className="text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50">
+                                {deletando ? 'Excluindo…' : 'Confirmar'}
+                              </button>
+                              <span className="text-gray-300">|</span>
+                              <button onClick={() => setConfirmandoId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-2">
+                              <button onClick={() => setEditandoDespesa(d)} className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"><IconLapis /></button>
+                              <button onClick={() => setConfirmandoId(d.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {(despesas?.items ?? []).length === 0 && (
+                      <tr><td colSpan={9} className="py-10 text-center text-sm text-gray-400">Nenhuma despesa no período</td></tr>
+                    )}
+                  </tbody>
+                  {(despesas?.soma_total ?? 0) > 0 && (
+                    <tfoot>
+                      <tr className="border-t-2 border-gray-100">
+                        <td colSpan={5} className="px-5 py-3 font-semibold text-gray-700">Total</td>
+                        <td className="px-5 py-3 text-right font-bold tabular-nums text-red-500">{fmtBRL(despesas!.soma_total)}</td>
+                        <td colSpan={3} />
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
-                  <th className="px-5 py-3">Competência</th>
-                  <th className="px-5 py-3">Tipo</th>
-                  <th className="px-5 py-3">Descrição</th>
-                  <th className="px-5 py-3">Centro</th>
-                  <th className="px-5 py-3">Banco</th>
-                  <th className="px-5 py-3 text-right">Valor</th>
-                  <th className="px-5 py-3">Recebido em</th>
-                  <th className="px-3 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {(receitas?.items ?? []).map((r) => (
-                  <tr key={r.id} className="border-t border-gray-50 hover:bg-gray-50">
-                    <td className="px-5 py-3 text-gray-600">{fmtCompetencia(r.competencia)}</td>
-                    <td className="px-5 py-3"><Badge text={r.tipo_nome ?? '—'} cor="bg-green-100 text-green-700" /></td>
-                    <td className="px-5 py-3 text-gray-700">{r.descricao}</td>
-                    <td className="px-5 py-3 capitalize text-gray-600">{r.centro_custo?.replace('_',' ') ?? '—'}</td>
-                    <td className="px-5 py-3 text-gray-600">{r.banco_nome ?? '—'}</td>
-                    <td className="px-5 py-3 text-right font-medium tabular-nums text-green-600">{fmtBRL(r.valor)}</td>
-                    <td className="px-5 py-3 text-gray-400">{r.recebido_em ?? '—'}</td>
-                    <td className="px-3 py-3 text-right">
+            <>
+              {/* Mobile: card list */}
+              <div className="divide-y divide-gray-50 sm:hidden">
+                {(receitas?.items ?? []).length === 0 ? (
+                  <p className="py-10 text-center text-sm text-gray-400">Nenhuma receita no período</p>
+                ) : (receitas?.items ?? []).map((r) => (
+                  <div key={r.id} className="px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-800">{r.descricao}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Badge text={r.tipo_nome ?? '—'} cor="bg-green-100 text-green-700" />
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold tabular-nums text-green-600">{fmtBRL(r.valor)}</p>
+                        <p className="mt-0.5 text-xs text-gray-400">{fmtCompetencia(r.competencia)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-gray-400 capitalize">
+                        {r.centro_custo?.replace('_', ' ') ?? ''}
+                        {r.banco_nome ? ` · ${r.banco_nome}` : ''}
+                        {r.recebido_em ? ` · Recebido ${r.recebido_em}` : ''}
+                      </p>
                       {confirmandoId === r.id ? (
                         <span className="inline-flex items-center gap-2">
                           <button onClick={() => deletarReceita(r.id)} disabled={deletando}
@@ -708,33 +753,73 @@ export default function LancamentosPage() {
                             {deletando ? 'Excluindo…' : 'Confirmar'}
                           </button>
                           <span className="text-gray-300">|</span>
-                          <button onClick={() => setConfirmandoId(null)}
-                            className="text-xs text-gray-400 hover:text-gray-600">
-                            Cancelar
-                          </button>
+                          <button onClick={() => setConfirmandoId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-2">
                           {r.origem === 'manual' && (
-                            <button onClick={() => setEditandoReceita(r)}
-                              className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar">
-                              <IconLapis />
-                            </button>
+                            <button onClick={() => setEditandoReceita(r)} className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"><IconLapis /></button>
                           )}
-                          <button onClick={() => setConfirmandoId(r.id)}
-                            className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir">
-                            <IconLixo />
-                          </button>
+                          <button onClick={() => setConfirmandoId(r.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-                {(receitas?.items ?? []).length === 0 && (
-                  <tr><td colSpan={8} className="py-10 text-center text-sm text-gray-400">Nenhuma receita no período</td></tr>
-                )}
-              </tbody>
-            </table>
+              </div>
+              {/* Desktop: table */}
+              <div className="hidden overflow-x-auto sm:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
+                      <th className="px-5 py-3">Competência</th>
+                      <th className="px-5 py-3">Tipo</th>
+                      <th className="px-5 py-3">Descrição</th>
+                      <th className="px-5 py-3">Centro</th>
+                      <th className="px-5 py-3">Banco</th>
+                      <th className="px-5 py-3 text-right">Valor</th>
+                      <th className="px-5 py-3">Recebido em</th>
+                      <th className="px-3 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(receitas?.items ?? []).map((r) => (
+                      <tr key={r.id} className="border-t border-gray-50 hover:bg-gray-50">
+                        <td className="px-5 py-3 text-gray-600">{fmtCompetencia(r.competencia)}</td>
+                        <td className="px-5 py-3"><Badge text={r.tipo_nome ?? '—'} cor="bg-green-100 text-green-700" /></td>
+                        <td className="px-5 py-3 text-gray-700">{r.descricao}</td>
+                        <td className="px-5 py-3 capitalize text-gray-600">{r.centro_custo?.replace('_',' ') ?? '—'}</td>
+                        <td className="px-5 py-3 text-gray-600">{r.banco_nome ?? '—'}</td>
+                        <td className="px-5 py-3 text-right font-medium tabular-nums text-green-600">{fmtBRL(r.valor)}</td>
+                        <td className="px-5 py-3 text-gray-400">{r.recebido_em ?? '—'}</td>
+                        <td className="px-3 py-3 text-right">
+                          {confirmandoId === r.id ? (
+                            <span className="inline-flex items-center gap-2">
+                              <button onClick={() => deletarReceita(r.id)} disabled={deletando}
+                                className="text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50">
+                                {deletando ? 'Excluindo…' : 'Confirmar'}
+                              </button>
+                              <span className="text-gray-300">|</span>
+                              <button onClick={() => setConfirmandoId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-2">
+                              {r.origem === 'manual' && (
+                                <button onClick={() => setEditandoReceita(r)} className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"><IconLapis /></button>
+                              )}
+                              <button onClick={() => setConfirmandoId(r.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {(receitas?.items ?? []).length === 0 && (
+                      <tr><td colSpan={8} className="py-10 text-center text-sm text-gray-400">Nenhuma receita no período</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

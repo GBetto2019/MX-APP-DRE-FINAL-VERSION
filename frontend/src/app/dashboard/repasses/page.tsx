@@ -35,18 +35,20 @@ export default function RepassesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#071934]">Repasses</h1>
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <span>De</span>
-          <input type="month" value={inicio.slice(0,7)}
-            onChange={(e) => { const [y,m]=e.target.value.split('-'); setInicio(`${y}-${m}-01`) }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 focus:outline-none" />
-          <span>Até</span>
-          <input type="month" value={fim.slice(0,7)}
-            onChange={(e) => { const [y,m]=e.target.value.split('-'); const l=new Date(+y,+m,0).getDate(); setFim(`${y}-${m}-${l}`) }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 focus:outline-none" />
-          <button onClick={buscar} className="rounded-lg bg-[#071934] px-4 py-2 text-sm font-medium text-white hover:bg-[#0E2444]">Consultar</button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Repasses</h1>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="shrink-0">De</span>
+            <input type="month" value={inicio.slice(0,7)}
+              onChange={(e) => { const [y,m]=e.target.value.split('-'); setInicio(`${y}-${m}-01`) }}
+              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none" />
+            <span className="shrink-0">Até</span>
+            <input type="month" value={fim.slice(0,7)}
+              onChange={(e) => { const [y,m]=e.target.value.split('-'); const l=new Date(+y,+m,0).getDate(); setFim(`${y}-${m}-${l}`) }}
+              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none" />
+          </div>
+          <button onClick={buscar} className="w-full rounded-lg bg-[#071934] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0E2444] sm:w-auto">Consultar</button>
         </div>
       </div>
 
@@ -63,7 +65,7 @@ export default function RepassesPage() {
 
       <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
         {loading ? <div className="p-5"><Skeleton variant="table" /></div> : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
                 <th className="px-5 py-3">Produtor</th>
@@ -91,7 +93,7 @@ export default function RepassesPage() {
                 <tr><td colSpan={5} className="py-10 text-center text-sm text-gray-400">Nenhum repasse no período</td></tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

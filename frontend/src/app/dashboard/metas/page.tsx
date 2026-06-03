@@ -24,12 +24,12 @@ export default function MetasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#071934]">Metas</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Metas</h1>
+        <div className="flex items-center gap-2">
           <input type="month" value={mes} onChange={(e) => setMes(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm focus:outline-none" />
-          <button onClick={buscar} className="rounded-lg bg-[#071934] px-4 py-2 text-sm font-medium text-white hover:bg-[#0E2444]">Consultar</button>
+            className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none sm:flex-none sm:py-1.5" />
+          <button onClick={buscar} className="rounded-lg bg-[#071934] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0E2444] sm:py-2">Consultar</button>
         </div>
       </div>
 

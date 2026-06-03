@@ -84,7 +84,7 @@ function SecaoUsuarios({ token, isAdmin }: { token: string; isAdmin: boolean }) 
       {/* Formulário de criação */}
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Usuário</h3>
-        <form onSubmit={criar} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <form onSubmit={criar} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input required value={form.nome} onChange={e => set('nome', e.target.value)}
             placeholder="Nome completo" className={inputCls} />
           <input required type="email" value={form.email} onChange={e => set('email', e.target.value)}
@@ -97,7 +97,7 @@ function SecaoUsuarios({ token, isAdmin }: { token: string; isAdmin: boolean }) 
             <option value="gestor">Gestor</option>
             {isAdmin && <option value="admin">Admin</option>}
           </select>
-          <div className="col-span-2 flex items-center gap-3 lg:col-span-4">
+          <div className="col-span-1 flex items-center gap-3 sm:col-span-2 lg:col-span-4">
             {erro && <p className="text-xs text-red-600">{erro}</p>}
             <button type="submit" disabled={criando}
               className="ml-auto rounded-lg bg-[#071934] px-5 py-2 text-sm font-medium text-white hover:bg-[#0E2444] disabled:opacity-50">
@@ -108,7 +108,7 @@ function SecaoUsuarios({ token, isAdmin }: { token: string; isAdmin: boolean }) 
       </div>
 
       {/* Lista */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         {loading ? (
           <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
         ) : (
@@ -207,7 +207,7 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
       {isAdmin && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Tipo</h3>
-          <form onSubmit={criar} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <form onSubmit={criar} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <input required value={form.nome} onChange={e => set('nome', e.target.value)}
               placeholder="Nome do tipo" className={inputCls} />
             <select value={form.natureza} onChange={e => set('natureza', e.target.value)} className={selectCls}>
@@ -221,7 +221,7 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
               <option value="fixo">Fixo</option>
               <option value="variavel">Variável</option>
             </select>
-            <div className="col-span-2 flex items-center gap-3 lg:col-span-4">
+            <div className="col-span-1 flex items-center gap-3 sm:col-span-2 lg:col-span-4">
               {erro && <p className="text-xs text-red-600">{erro}</p>}
               <button type="submit" disabled={criando}
                 className="ml-auto rounded-lg bg-[#071934] px-5 py-2 text-sm font-medium text-white hover:bg-[#0E2444] disabled:opacity-50">
@@ -234,7 +234,7 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
 
       {/* Tabelas por natureza */}
       {[{ label: 'Despesas', cor: 'text-red-600', lista: despesas }, { label: 'Receitas', cor: 'text-green-700', lista: receitas }].map(grupo => (
-        <div key={grupo.label} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div key={grupo.label} className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <div className="border-b border-gray-100 px-4 py-2.5">
             <h3 className={`text-xs font-semibold uppercase tracking-wide ${grupo.cor}`}>{grupo.label}</h3>
           </div>
@@ -352,7 +352,7 @@ function SecaoBancos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
       {isAdmin && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Banco</h3>
-          <form onSubmit={criar} className="flex gap-3">
+          <form onSubmit={criar} className="flex flex-col gap-2 sm:flex-row sm:gap-3">
             <input required value={nome} onChange={e => setNome(e.target.value)}
               placeholder="Nome do banco" className={`${inputCls} flex-1`} />
             {erro && <p className="self-center text-xs text-red-600">{erro}</p>}
@@ -364,7 +364,7 @@ function SecaoBancos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         {loading ? (
           <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
         ) : (
@@ -465,11 +465,11 @@ function SecaoCentros({ token, isAdmin }: { token: string; isAdmin: boolean }) {
       {isAdmin && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Centro de Custo</h3>
-          <form onSubmit={criar} className="flex gap-3">
+          <form onSubmit={criar} className="flex flex-col gap-2 sm:flex-row sm:gap-3">
             <input required value={form.nome} onChange={e => set('nome', e.target.value)}
               placeholder="Nome" className={`${inputCls} flex-1`} />
             <input required value={form.codigo} onChange={e => set('codigo', e.target.value)}
-              placeholder="Código" className={`${inputCls} w-36`} />
+              placeholder="Código" className={`${inputCls} sm:w-36`} />
             {erro && <p className="self-center text-xs text-red-600">{erro}</p>}
             <button type="submit" disabled={criando}
               className="rounded-lg bg-[#071934] px-5 py-2 text-sm font-medium text-white hover:bg-[#0E2444] disabled:opacity-50 whitespace-nowrap">
@@ -479,7 +479,7 @@ function SecaoCentros({ token, isAdmin }: { token: string; isAdmin: boolean }) {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         {loading ? (
           <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
         ) : (
@@ -561,17 +561,17 @@ export default function ConfiguracoesPage() {
     <div className="space-y-5">
       {/* Cabeçalho */}
       <div>
-        <h1 className="text-2xl font-bold text-[#071934]">Configurações</h1>
+        <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Configurações</h1>
         <p className="mt-0.5 text-sm text-gray-500">Gerencie os parâmetros do sistema</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm sm:flex">
         {ABAS.map(a => (
           <button
             key={a.id}
             onClick={() => setAba(a.id)}
-            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-lg px-2 py-2.5 text-xs font-medium transition-colors sm:flex-1 sm:px-3 sm:text-sm ${
               aba === a.id
                 ? 'bg-[#071934] text-white shadow-sm'
                 : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'

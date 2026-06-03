@@ -47,32 +47,32 @@ export default function ExportsPage() {
         <h2 className="font-semibold text-gray-800">Exportar DRE</h2>
 
         <div className="flex flex-wrap gap-4">
-          <div>
+          <div className="flex-1 sm:flex-none">
             <label className="block text-xs font-medium text-gray-600">Início</label>
             <input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)}
-              className="mt-1 rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-mx-blue focus:outline-none" />
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2.5 text-sm focus:border-mx-blue focus:outline-none sm:w-auto sm:py-1.5" />
           </div>
-          <div>
+          <div className="flex-1 sm:flex-none">
             <label className="block text-xs font-medium text-gray-600">Fim</label>
             <input type="date" value={fim} onChange={(e) => setFim(e.target.value)}
-              className="mt-1 rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-mx-blue focus:outline-none" />
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2.5 text-sm focus:border-mx-blue focus:outline-none sm:w-auto sm:py-1.5" />
           </div>
         </div>
 
         {erro && <p className="text-sm text-red-600">Erro: {erro}</p>}
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             onClick={() => baixar('xlsx')}
             disabled={!!loading}
-            className="rounded-lg border border-mx-navy px-5 py-2 text-sm font-medium text-mx-navy hover:bg-mx-light disabled:opacity-50"
+            className="w-full rounded-lg border border-mx-navy px-5 py-2.5 text-sm font-medium text-mx-navy hover:bg-mx-light disabled:opacity-50 sm:w-auto"
           >
             {loading === 'xlsx' ? 'Gerando…' : '⬇ Excel (.xlsx)'}
           </button>
           <button
             onClick={() => baixar('pdf')}
             disabled={!!loading}
-            className="rounded-lg bg-mx-navy px-5 py-2 text-sm font-medium text-white hover:bg-mx-blue disabled:opacity-50"
+            className="w-full rounded-lg bg-mx-navy px-5 py-2.5 text-sm font-medium text-white hover:bg-mx-blue disabled:opacity-50 sm:w-auto"
           >
             {loading === 'pdf' ? 'Gerando…' : '⬇ PDF'}
           </button>

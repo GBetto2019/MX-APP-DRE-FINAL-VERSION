@@ -92,14 +92,14 @@ export default function AssistentePage() {
   }
 
   return (
-    <div className="flex h-full flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-[#071934]">Assistente IA</h1>
+    <div className="flex h-[calc(100dvh-9rem)] flex-col lg:h-[calc(100dvh-4rem)]">
+      <div className="mb-3">
+        <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Assistente IA</h1>
         <p className="text-sm text-gray-500">Análises inteligentes do seu DRE — pergunte em português</p>
       </div>
 
       {/* Área de mensagens */}
-      <div className="flex-1 overflow-y-auto rounded-2xl bg-white p-6 shadow-sm">
+      <div className="flex-1 overflow-y-auto rounded-2xl bg-white p-4 shadow-sm sm:p-6">
         <div className="space-y-5">
           {mensagens.map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -133,7 +133,7 @@ export default function AssistentePage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && enviar()}
           disabled={streaming}
-          placeholder="Pergunte sobre o DRE, estornos, metas... (Enter para enviar)"
+          placeholder="Pergunte sobre o DRE... (Enter para enviar)"
           className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 focus:outline-none disabled:opacity-60"
         />
         <button
