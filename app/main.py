@@ -23,7 +23,7 @@ from app.database import close_asyncpg_pool, init_asyncpg_pool
 from app.logging_config import get_logger, setup_logging
 from app.middleware.rate_limit import limiter
 from app.middleware.tenant import TenantMiddleware
-from app.routers import chat, comissoes, configuracoes, dashboard, dre, estornos, exports, fechamentos, health as health_router, importacao, lancamentos, metas, platform, repasses, usuarios
+from app.routers import chat, comissoes, configuracoes, dashboard, dre, exports, fechamentos, health as health_router, importacao, lancamentos, platform, usuarios
 
 setup_logging()
 logger = get_logger(__name__)
@@ -93,9 +93,6 @@ app.include_router(chat.router)
 app.include_router(dre.router)
 app.include_router(exports.router)
 app.include_router(comissoes.router)
-app.include_router(estornos.router)
-app.include_router(metas.router)
-app.include_router(repasses.router)
 app.include_router(lancamentos.router)
 app.include_router(fechamentos.router)
 app.include_router(importacao.router)

@@ -70,119 +70,6 @@ class ComissoesResponse(RespostaBase):
     soma_total: Decimal
 
 
-# ── ESTORNOS ──────────────────────────────────────────────────
-
-class EstornoItem(RespostaBase):
-    id:                   UUID
-    apolice_id:           UUID
-    seguradora_nome:      str | None = None
-    valor:                Decimal
-    motivo:               str | None
-    competencia_original: date
-    competencia_estorno:  date
-
-
-class EstornosResponse(RespostaBase):
-    total:          int
-    items:          list[EstornoItem]
-    soma_total:     Decimal
-    taxa_estorno:   Decimal   # estornos / receita_bruta do período
-    alerta_5pct:    bool
-
-
-# ── METAS ─────────────────────────────────────────────────────
-
-class MetaItem(RespostaBase):
-    meta_id:      UUID
-    escopo:       str
-    escopo_id:    UUID | None
-    metrica:      str
-    valor_alvo:   Decimal
-    valor_atual:  Decimal
-    percentual:   Decimal
-    atingida:     bool
-
-
-class MetasResponse(RespostaBase):
-    competencia: date
-    items:       list[MetaItem]
-
-
-class MetaCreate(RespostaBase):
-    escopo:      str          # 'global' | 'equipe' | 'produtor' | 'ramo'
-    escopo_id:   UUID | None = None
-    competencia: date
-    valor_alvo:  Decimal
-    metrica:     str          # 'receita_bruta' | 'comissao_liquida' | 'numero_apolices'
-
-    @field_validator("escopo")
-    @classmethod
-    def escopo_valido(cls, v: str) -> str:
-        validos = {"global", "equipe", "produtor", "ramo"}
-        if v not in validos:
-            raise ValueError(f"escopo deve ser um de: {validos}")
-        return v
-
-    @field_validator("metrica")
-    @classmethod
-    def metrica_valida(cls, v: str) -> str:
-        validas = {"receita_bruta", "comissao_liquida", "numero_apolices"}
-        if v not in validas:
-            raise ValueError(f"metrica deve ser uma de: {validas}")
-        return v
-
-    @field_validator("valor_alvo")
-    @classmethod
-    def valor_positivo(cls, v: Decimal) -> Decimal:
-        if v <= 0:
-            raise ValueError("valor_alvo deve ser positivo")
-        return v
-
-
-class MetaUpdate(RespostaBase):
-    valor_alvo: Decimal | None = None
-    metrica:    str | None = None
-
-    @field_validator("valor_alvo")
-    @classmethod
-    def valor_positivo(cls, v: Decimal | None) -> Decimal | None:
-        if v is not None and v <= 0:
-            raise ValueError("valor_alvo deve ser positivo")
-        return v
-
-
-class MetaCadastroItem(RespostaBase):
-    """Meta retornada em listagens de cadastro (sem valor_atual/percentual)."""
-    id:          UUID
-    escopo:      str
-    escopo_id:   UUID | None
-    competencia: date
-    valor_alvo:  Decimal
-    metrica:     str
-    criado_em:   Any | None = None
-
-
-# ── REPASSES ──────────────────────────────────────────────────
-
-class RepasseItem(RespostaBase):
-    id:            UUID
-    comissao_id:   UUID
-    produtor_id:   UUID
-    produtor_nome: str | None = None
-    valor:         Decimal
-    percentual:    Decimal | None
-    competencia:   date
-    pago_em:       date | None
-    status:        str
-
-
-class RepassesResponse(RespostaBase):
-    total:          int
-    items:          list[RepasseItem]
-    soma_previsto:  Decimal
-    soma_pago:      Decimal
-
-
 # ── RECEITA POR RAMO ──────────────────────────────────────────
 
 class ReceitaRamoItem(RespostaBase):
@@ -490,7 +377,7 @@ class FechamentosResponse(RespostaBase):
 # ── DASHBOARD AGREGADO ────────────────────────────────────────
 
 class AlertaDashboard(RespostaBase):
-    tipo:      str   # 'estorno_alto' | 'meta_atrasada' | 'concentracao_seguradora'
+    tipo:      str
     mensagem:  str
     severidade: str  # 'info' | 'aviso' | 'critico'
 
@@ -499,7 +386,6 @@ class DashboardResponse(RespostaBase):
     periodo:        dict[str, date]
     dre:            LinhasDRE
     perfil:         str
-    metas:          MetasResponse
     alertas:        list[AlertaDashboard]
     latencia_ms:    int   # tempo de execução server-side em ms
 

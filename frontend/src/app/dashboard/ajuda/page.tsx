@@ -15,7 +15,7 @@ const FAQ: FaqItem[] = [
     id: 'p1',
     categoria: 'Perfis e Permissões',
     pergunta: 'Quais são os perfis do sistema?',
-    resposta: 'Admin: acesso total, incluindo aprovar despesas, gerenciar usuários e reabrir fechamentos. Gestor: aprova despesas, visualiza dados da equipe. Contador: lança despesas e receitas, acessa DRE completo. Comercial: lança despesas, visualiza suas próprias comissões e metas.',
+    resposta: 'Admin: acesso total, incluindo aprovar despesas, gerenciar usuários e reabrir fechamentos. Gestor: aprova despesas, visualiza dados da equipe. Contador: lança despesas e receitas, acessa DRE completo. Comercial: lança despesas, visualiza suas próprias comissões.',
   },
   {
     id: 'p2',
@@ -33,7 +33,7 @@ const FAQ: FaqItem[] = [
     id: 'p4',
     categoria: 'Perfis e Permissões',
     pergunta: 'Por que não vejo alguns itens no menu?',
-    resposta: 'O menu exibe apenas o que seu perfil pode usar. Aprovações e Configurações são visíveis só para Admin e Gestor. Usuários é visível só para Admin e Gestor. Contador e Comercial veem os demais menus.',
+    resposta: 'O menu exibe apenas o que seu perfil pode usar. Aprovações e Configurações são visíveis só para Admin e Gestor.',
   },
   {
     id: 'p5',
@@ -168,54 +168,6 @@ const FAQ: FaqItem[] = [
     resposta: 'Seu perfil não tem permissão para visualizar essa informação. Comercial não vê Receita Líquida nem EBITDA. Gestor não vê Despesas Fixas nem EBITDA.',
   },
 
-  // ── Estornos ──────────────────────────────────────────────────
-  {
-    id: 'e1',
-    categoria: 'Estornos',
-    pergunta: 'O que é a tela de Estornos?',
-    resposta: 'Lista as comissões devolvidas à seguradora no período, com detalhes de apólice, motivo, valor e competência original. Serve para monitorar a qualidade da carteira.',
-  },
-  {
-    id: 'e2',
-    categoria: 'Estornos',
-    pergunta: 'O que é a taxa de estorno e qual o limite?',
-    resposta: 'Percentual de estornos sobre a receita bruta do período. Acima de 5% aparece um alerta vermelho — sinal de atenção para cancelamentos excessivos na carteira.',
-  },
-  {
-    id: 'e3',
-    categoria: 'Estornos',
-    pergunta: 'Por que estornos aparecem com valor negativo no DRE?',
-    resposta: 'São uma dedução da Receita Bruta. Reduzem o que a corretora realmente recebeu das seguradoras.',
-  },
-
-  // ── Metas ─────────────────────────────────────────────────────
-  {
-    id: 'm1',
-    categoria: 'Metas',
-    pergunta: 'Como são calculadas as metas?',
-    resposta: 'O sistema compara o valor atual do indicador (receita bruta, número de apólices etc.) com a meta definida para o período, calculando o percentual atingido.',
-  },
-  {
-    id: 'm2',
-    categoria: 'Metas',
-    pergunta: 'Por que vejo metas diferentes de outros usuários?',
-    resposta: 'As metas são filtradas por perfil: Admin e Contador veem todas. Gestor vê globais e da equipe. Comercial vê apenas a própria meta.',
-  },
-
-  // ── Repasses ──────────────────────────────────────────────────
-  {
-    id: 'r1',
-    categoria: 'Repasses',
-    pergunta: 'O que são repasses?',
-    resposta: 'Valores que a corretora repassa aos produtores (corretores parceiros), calculados como percentual das comissões recebidas.',
-  },
-  {
-    id: 'r2',
-    categoria: 'Repasses',
-    pergunta: 'Qual a diferença entre Previsto e Pago?',
-    resposta: 'Previsto é o valor calculado que deve ser repassado. Pago é o que já foi efetivamente transferido ao produtor.',
-  },
-
   // ── Fechamentos ───────────────────────────────────────────────
   {
     id: 'f1',
@@ -243,7 +195,7 @@ const FAQ: FaqItem[] = [
     id: 'i1',
     categoria: 'Assistente IA',
     pergunta: 'O que o Assistente IA pode responder?',
-    resposta: 'Perguntas sobre o DRE, interpretação de números, análise de tendências, estornos, metas e qualquer dúvida sobre os dados financeiros da corretora.',
+    resposta: 'Perguntas sobre o DRE, interpretação de números, análise de tendências, receita por ramo e qualquer dúvida sobre os dados financeiros da corretora.',
   },
   {
     id: 'i2',
@@ -255,7 +207,7 @@ const FAQ: FaqItem[] = [
     id: 'i3',
     categoria: 'Assistente IA',
     pergunta: 'Posso pedir análises e comparativos ao Assistente?',
-    resposta: 'Sim. Exemplos: "Compare o EBITDA dos últimos 3 meses", "Qual ramo tem mais estornos?", "Minha meta de receita está no ritmo certo?".',
+    resposta: 'Sim. Exemplos: "Compare o EBITDA dos últimos 3 meses", "Qual ramo gerou mais receita?", "Como estão minhas comissões neste período?".',
   },
 ]
 
@@ -364,7 +316,7 @@ export default function AjudaPage() {
           type="text"
           value={busca}
           onChange={e => setBusca(e.target.value)}
-          placeholder="Buscar por palavra-chave… ex: estorno, aprovação, DRE"
+          placeholder="Buscar por palavra-chave… ex: aprovação, DRE, lançamento"
           className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:border-[#071934] focus:outline-none focus:ring-1 focus:ring-[#071934]/20"
         />
         {busca && (

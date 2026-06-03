@@ -29,11 +29,11 @@ def montar_system_prompt(
         ),
         "gestor":    (
             "Tom tático. Foco em mix de carteira, performance de equipe e "
-            "controle de estornos. Destaque variações e alertas operacionais."
+            "variações operacionais. Destaque alertas relevantes."
         ),
         "comercial": (
-            "Tom motivacional. Foco em projeção de ganhos, retenção de "
-            "clientes e atingimento de metas. Use linguagem encorajadora."
+            "Tom motivacional. Foco em projeção de ganhos e retenção de "
+            "clientes. Use linguagem encorajadora."
         ),
         "contador":  (
             "Tom técnico e preciso. Foco em exatidão contábil, reconciliação "
@@ -78,10 +78,7 @@ TOM E COMPORTAMENTO
 ALERTAS OBRIGATÓRIOS
 ═══════════════════════════════════════════════════
 Quando os dados indicarem, SEMPRE alerte:
-- Taxa de estorno > 5% da receita bruta → alertar gestor e comercial.
 - Concentração de receita > 60% em uma única seguradora → alertar admin.
-- Meta < 80% atingida com menos de 5 dias úteis para fim do mês →
-  alertar comercial com tom motivacional.
 
 ═══════════════════════════════════════════════════
 FORMATO DE RESPOSTA

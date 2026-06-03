@@ -63,18 +63,6 @@ TOOLS_DEFINICAO: list[dict] = [
         },
     },
     {
-        "name": "analisar_estornos",
-        "description": "Analisa estornos do período com taxa e alerta de 5%.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "inicio": {"type": "string"},
-                "fim":    {"type": "string"},
-            },
-            "required": ["inicio", "fim"],
-        },
-    },
-    {
         "name": "consultar_comissoes_produtor",
         "description": (
             "Retorna comissões agrupadas por produtor no período. "
@@ -90,42 +78,15 @@ TOOLS_DEFINICAO: list[dict] = [
             "required": ["inicio", "fim"],
         },
     },
-    {
-        "name": "consultar_metas",
-        "description": "Retorna metas e percentual de atingimento para o mês.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "competencia": {"type": "string", "description": "Mês YYYY-MM-DD"},
-            },
-            "required": ["competencia"],
-        },
-    },
-    {
-        "name": "consultar_repasses",
-        "description": "Lista repasses previstos e pagos a produtores no período.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "inicio":      {"type": "string"},
-                "fim":         {"type": "string"},
-                "produtor_id": {"type": "string", "description": "UUID do produtor (opcional)"},
-            },
-            "required": ["inicio", "fim"],
-        },
-    },
 ]
 
 # ── MATRIZ DE PERMISSÃO POR TOOL (§5.2) ───────────────────────
 
 PERMISSOES_TOOL: dict[str, set[str]] = {
-    "consultar_dre":              {"admin", "gestor", "comercial", "contador"},
-    "comparar_periodos":          {"admin", "gestor", "contador"},
-    "analisar_receita_por_ramo":  {"admin", "gestor", "contador"},
-    "analisar_estornos":          {"admin", "gestor", "comercial", "contador"},
+    "consultar_dre":               {"admin", "gestor", "comercial", "contador"},
+    "comparar_periodos":           {"admin", "gestor", "contador"},
+    "analisar_receita_por_ramo":   {"admin", "gestor", "contador"},
     "consultar_comissoes_produtor": {"admin", "gestor", "comercial", "contador"},
-    "consultar_metas":            {"admin", "gestor", "comercial", "contador"},
-    "consultar_repasses":         {"admin", "gestor", "comercial", "contador"},
 }
 
 
@@ -202,14 +163,6 @@ async def _dispatch(
         )
         return resultado.model_dump(mode="json")
 
-    if nome == "analisar_estornos":
-        resultado = await dre_service.buscar_estornos(
-            date.fromisoformat(inputs["inicio"]),
-            date.fromisoformat(inputs["fim"]),
-            usuario, db,
-        )
-        return resultado.model_dump(mode="json")
-
     if nome == "consultar_comissoes_produtor":
         # Comercial só pode ver as próprias
         produtor_id = inputs.get("produtor_id")
@@ -220,26 +173,6 @@ async def _dispatch(
             date.fromisoformat(inputs["inicio"]),
             date.fromisoformat(inputs["fim"]),
             usuario, db,
-        )
-        return resultado.model_dump(mode="json")
-
-    if nome == "consultar_metas":
-        resultado = await dre_service.buscar_metas(
-            date.fromisoformat(inputs["competencia"]),
-            usuario, db,
-        )
-        return resultado.model_dump(mode="json")
-
-    if nome == "consultar_repasses":
-        produtor_id = inputs.get("produtor_id")
-        if usuario.role == "comercial":
-            produtor_id = usuario.produtor_id
-
-        resultado = await dre_service.buscar_repasses(
-            date.fromisoformat(inputs["inicio"]),
-            date.fromisoformat(inputs["fim"]),
-            usuario, db,
-            produtor_id=produtor_id,
         )
         return resultado.model_dump(mode="json")
 

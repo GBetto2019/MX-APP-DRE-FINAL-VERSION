@@ -43,19 +43,9 @@ const IconTrendUp = () => (
     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
   </svg>
 )
-const IconTrendDown = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-red-500">
-    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
-  </svg>
-)
 const IconDollar = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-green-600">
     <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-  </svg>
-)
-const IconBar = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-amber-600">
-    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
   </svg>
 )
 const IconTarget = () => (
@@ -128,22 +118,10 @@ export default function DashboardPage() {
               icon={<IconTrendUp />}
             />
             <CardKPI
-              label="Estornos"
-              valor={d.estornos}
-              iconBg="bg-red-50"
-              icon={<IconTrendDown />}
-            />
-            <CardKPI
               label="Receita Líquida"
               valor={d.receita_liquida}
               iconBg="bg-green-50"
               icon={<IconDollar />}
-            />
-            <CardKPI
-              label="Repasses"
-              valor={d.repasses_produtores}
-              iconBg="bg-amber-50"
-              icon={<IconBar />}
             />
             <CardKPI
               label="EBITDA"

@@ -24,9 +24,7 @@ async def get_dashboard(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     """
-    Retorna DRE + metas + alertas em uma única chamada (asyncio.gather internamente).
-    Substitui 2-3 chamadas sequenciais do frontend por 1 chamada paralela.
-
+    Retorna DRE agregado com alertas.
     Campos visíveis variam conforme o perfil (§4.5 do SDD).
     """
     inicio, fim = periodo

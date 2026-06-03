@@ -23,7 +23,7 @@ const UserIcon = () => (
 
 const MSG_BOAS_VINDAS: ChatMensagem = {
   role: 'assistant',
-  content: 'Olá! Sou o assistente de DRE da MX Seguros. Posso ajudar com análises financeiras, comparativos de períodos, receita por ramo, estornos, metas e muito mais. O que você gostaria de saber?',
+  content: 'Olá! Sou o assistente de DRE da MX Seguros. Posso ajudar com análises financeiras, comparativos de períodos, receita por ramo e muito mais. O que você gostaria de saber?',
 }
 
 export default function AssistentePage() {
