@@ -52,11 +52,14 @@ export default function DrePage() {
   function buscar() {
     if (!token) return
     setLoading(true); setErro(null)
-    Promise.all([
-      api.get<DREResponse>(`/dre?inicio=${inicio}&fim=${fim}`, token),
-      api.get<ReceitaRamoResponse>(`/dre/ramos?inicio=${inicio}&fim=${fim}`, token),
-    ])
-      .then(([d, r]) => { setDre(d); setRamos(r.items ?? []) })
+    // DRE principal é obrigatório; gráfico de ramos é opcional (403 para comercial)
+    api.get<DREResponse>(`/dre?inicio=${inicio}&fim=${fim}`, token)
+      .then(d => {
+        setDre(d)
+        api.get<ReceitaRamoResponse>(`/dre/ramos?inicio=${inicio}&fim=${fim}`, token)
+          .then(r => setRamos(r.items ?? []))
+          .catch(() => setRamos([]))
+      })
       .catch((e) => setErro(e.message))
       .finally(() => setLoading(false))
   }

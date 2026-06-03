@@ -242,23 +242,29 @@ export default function MetasPage() {
     setLoading(true); setErro(null)
     const competencia = `${mes}-01`
 
-    const calls: Promise<unknown>[] = [
-      api.get<MetasResponse>(`/metas?competencia=${competencia}`, token),
-    ]
-    if (isAdmin) {
-      calls.push(
-        api.get<MetaCadastroItem[]>(`/metas/cadastro?competencia=${competencia}`, token),
-        api.get<{ total: number; items: UsuarioItem[] }>('/usuarios', token),
-      )
+    // Progresso é obrigatório para todos os perfis
+    // Cadastro e usuários (admin/gestor) são carregados em paralelo mas sem bloquear
+    const baseCall = api.get<MetasResponse>(`/metas?competencia=${competencia}`, token)
+
+    if (!isAdmin) {
+      baseCall
+        .then(setProgresso)
+        .catch(e => setErro(e.message))
+        .finally(() => setLoading(false))
+      return
     }
 
-    Promise.all(calls)
+    Promise.all([
+      baseCall,
+      api.get<MetaCadastroItem[]>(`/metas/cadastro?competencia=${competencia}`, token)
+        .catch(() => [] as MetaCadastroItem[]),
+      api.get<{ total: number; items: UsuarioItem[] }>('/usuarios', token)
+        .catch(() => ({ total: 0, items: [] as UsuarioItem[] })),
+    ])
       .then(([prog, cad, usr]) => {
         setProgresso(prog as MetasResponse)
-        if (isAdmin) {
-          setCadastro((cad as MetaCadastroItem[]) ?? [])
-          setUsuarios(((usr as { items: UsuarioItem[] })?.items ?? []).filter(u => u.ativo))
-        }
+        setCadastro((cad as MetaCadastroItem[]) ?? [])
+        setUsuarios(((usr as { items: UsuarioItem[] })?.items ?? []).filter(u => u.ativo))
       })
       .catch(e => setErro(e.message))
       .finally(() => setLoading(false))
