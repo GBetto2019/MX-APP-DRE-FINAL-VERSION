@@ -32,11 +32,22 @@ export interface DREResponse {
 export interface MetaItem {
   meta_id: string
   escopo: string
+  escopo_id: string | null
   metrica: string
   valor_alvo: number
   valor_atual: number
   percentual: number
   atingida: boolean
+}
+
+export interface MetaCadastroItem {
+  id: string
+  escopo: string
+  escopo_id: string | null
+  competencia: string
+  valor_alvo: number
+  metrica: string
+  criado_em: string | null
 }
 
 export interface MetasResponse {

@@ -225,6 +225,55 @@ async def buscar_metas(
     return MetasResponse(competencia=competencia, items=items)
 
 
+# ── METAS CRUD (admin) ─────────────────────────────────────────
+
+async def listar_metas_cadastro(
+    competencia: date,
+    db: Client,
+) -> list[MetaCadastroItem]:
+    resp = (
+        db.table("metas")
+        .select("id, escopo, escopo_id, competencia, valor_alvo, metrica, criado_em")
+        .eq("competencia", competencia.isoformat())
+        .order("escopo")
+        .order("escopo_id")
+        .execute()
+    )
+    return [MetaCadastroItem(**row) for row in (resp.data or [])]
+
+
+async def criar_meta(
+    payload: MetaCreate,
+    db: Client,
+) -> MetaCadastroItem:
+    dados: dict = {
+        "escopo":      payload.escopo,
+        "competencia": payload.competencia.isoformat(),
+        "valor_alvo":  float(payload.valor_alvo),
+        "metrica":     payload.metrica,
+    }
+    if payload.escopo_id:
+        dados["escopo_id"] = str(payload.escopo_id)
+    resp = db.table("metas").insert(dados).execute()
+    return MetaCadastroItem(**resp.data[0])
+
+
+async def atualizar_meta(
+    meta_id: UUID,
+    payload: MetaUpdate,
+    db: Client,
+) -> MetaCadastroItem:
+    dados = payload.model_dump(exclude_none=True)
+    if "valor_alvo" in dados:
+        dados["valor_alvo"] = float(dados["valor_alvo"])
+    resp = db.table("metas").update(dados).eq("id", str(meta_id)).execute()
+    return MetaCadastroItem(**resp.data[0])
+
+
+async def deletar_meta(meta_id: UUID, db: Client) -> None:
+    db.table("metas").delete().eq("id", str(meta_id)).execute()
+
+
 # ── REPASSES ──────────────────────────────────────────────────
 
 async def buscar_repasses(
