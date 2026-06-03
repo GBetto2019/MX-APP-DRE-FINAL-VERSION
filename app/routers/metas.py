@@ -15,11 +15,11 @@ from app.services import dre_service
 router = APIRouter(prefix="/metas", tags=["Metas"])
 
 
-def _exigir_admin(usuario: UsuarioAtual) -> None:
-    if usuario.role != "admin":
+def _exigir_admin_ou_gestor(usuario: UsuarioAtual) -> None:
+    if usuario.role not in ("admin", "gestor"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas Admin pode gerenciar metas.",
+            detail="Apenas Admin ou Gestor pode gerenciar metas.",
         )
 
 
@@ -34,7 +34,7 @@ async def listar_metas_cadastro(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     """Lista todas as metas da competência para gestão (sem cálculo de atingimento)."""
-    _exigir_admin(usuario)
+    _exigir_admin_ou_gestor(usuario)
     db = get_supabase_admin()
     return await dre_service.listar_metas_cadastro(competencia, db)
 
@@ -68,7 +68,7 @@ async def criar_meta(
     payload: MetaCreate,
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
-    _exigir_admin(usuario)
+    _exigir_admin_ou_gestor(usuario)
     db = get_supabase_admin()
     item = await dre_service.criar_meta(payload, db)
     await dre_service.registrar_auditoria(
@@ -97,7 +97,7 @@ async def atualizar_meta(
     payload: MetaUpdate,
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
-    _exigir_admin(usuario)
+    _exigir_admin_ou_gestor(usuario)
     db = get_supabase_admin()
     return await dre_service.atualizar_meta(meta_id, payload, db)
 
@@ -112,6 +112,6 @@ async def deletar_meta(
     meta_id: UUID,
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
-    _exigir_admin(usuario)
+    _exigir_admin_ou_gestor(usuario)
     db = get_supabase_admin()
     await dre_service.deletar_meta(meta_id, db)

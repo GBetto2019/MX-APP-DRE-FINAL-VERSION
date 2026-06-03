@@ -215,7 +215,7 @@ function ModalMeta({ token, usuarios, meta, mes, usuarioPreSel, onClose, onSaved
 export default function MetasPage() {
   const { token }  = useAuth()
   const { role }   = useUser()
-  const isAdmin    = role === 'admin'
+  const isAdmin    = role === 'admin' || role === 'gestor'
 
   const hoje = new Date()
   const [mes, setMes] = useState(
