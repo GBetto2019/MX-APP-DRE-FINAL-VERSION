@@ -252,7 +252,7 @@ async def criar_receita(
     if usuario.role not in _ROLES_ESCRITA:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas Admin e Contador podem criar receitas.",
+            detail="Sem permissão para criar receitas.",
         )
     token = request.headers.get("authorization", "").replace("Bearer ", "")
     db = get_supabase_usuario(token)

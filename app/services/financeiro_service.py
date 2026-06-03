@@ -149,6 +149,9 @@ async def buscar_despesas(
         .lte("competencia", fim.isoformat())
         .order("competencia", desc=True)
     )
+    # Comercial e Contador só veem o que lançaram; Admin e Gestor veem tudo
+    if usuario.role in ("comercial", "contador"):
+        query = query.eq("criado_por", usuario.user_id)
     if centro_custo:
         query = query.eq("centro_custo", centro_custo)
     if banco_id:
@@ -459,7 +462,12 @@ async def buscar_receitas(
     soma_comissoes = Decimal(0)
     soma_manuais   = Decimal(0)
 
-    # 1. Comissões (ETL / automáticas) — sem filtro de banco/centro pois comissoes não tem esses campos
+    # Regra de visibilidade:
+    # Admin/Gestor: veem tudo (comissões + todas as receitas manuais)
+    # Contador/Comercial: veem apenas receitas manuais que eles próprios criaram
+    ver_tudo = usuario.role in ("admin", "gestor")
+
+    # 1. Comissões (ETL / automáticas) — apenas Admin e Gestor
     q_com = (
         db.table("comissoes")
         .select("id, valor, competencia, recebida_em, tipo, apolice_id")
@@ -467,7 +475,7 @@ async def buscar_receitas(
         .lte("competencia", fim.isoformat())
         .order("competencia", desc=True)
     )
-    if not banco_id and not centro_custo:  # só exibe comissões quando não há filtro específico
+    if ver_tudo and not banco_id and not centro_custo:
         resp_com = q_com.execute()
         for row in (resp_com.data or []):
             v = _dec(row["valor"])
@@ -488,13 +496,16 @@ async def buscar_receitas(
         db.table("receitas_outras")
         .select(
             "id, descricao, valor, competencia, recebido_em, centro_custo, "
-            "observacao, tipo_lancamento_id, banco_id, "
+            "observacao, tipo_lancamento_id, banco_id, criado_por, "
             "tipos_lancamento(nome), bancos(nome)"
         )
         .gte("competencia", inicio.isoformat())
         .lte("competencia", fim.isoformat())
         .order("competencia", desc=True)
     )
+    # Contador e Comercial veem apenas as próprias receitas manuais
+    if not ver_tudo:
+        q_rec = q_rec.eq("criado_por", usuario.user_id)
     if centro_custo:
         q_rec = q_rec.eq("centro_custo", centro_custo)
     if banco_id:
@@ -545,6 +556,7 @@ async def criar_receita_outra(
         "valor":        str(payload.valor),
         "competencia":  payload.competencia.isoformat(),
         "centro_custo": payload.centro_custo,
+        "criado_por":   usuario.user_id,
     }
     if getattr(usuario, "tenant_id", None):
         dados["tenant_id"] = usuario.tenant_id
