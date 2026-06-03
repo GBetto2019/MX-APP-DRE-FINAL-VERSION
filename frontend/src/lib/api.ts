@@ -27,7 +27,10 @@ export const api = {
     request<T>(path, token, { method: 'PUT', body: JSON.stringify(body) }),
   patch: <T>(path: string, token: string, body: unknown) =>
     request<T>(path, token, { method: 'PATCH', body: JSON.stringify(body) }),
-  delete: <T>(path: string, token: string) => request<T>(path, token, { method: 'DELETE' }),
+  delete: <T>(path: string, token: string, params?: Record<string, string>) => {
+    const url = params ? `${path}?${new URLSearchParams(params).toString()}` : path
+    return request<T>(url, token, { method: 'DELETE' })
+  },
 }
 
 export function streamChat(

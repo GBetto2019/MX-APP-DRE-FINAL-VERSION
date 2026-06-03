@@ -142,14 +142,15 @@ async def editar_despesa(
 async def deletar_despesa(
     request: Request,
     despesa_id: UUID,
+    excluir_futuras: bool = Query(False, description="Excluir também parcelas futuras do mesmo grupo"),
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_leitura(usuario)
     db_admin = get_supabase_admin()
-    await financeiro_service.deletar_despesa(despesa_id, db_admin)
+    await financeiro_service.deletar_despesa(despesa_id, db_admin, excluir_futuras=excluir_futuras)
     await registrar_auditoria(
         usuario, "deletar_despesa",
-        {"despesa_id": str(despesa_id)},
+        {"despesa_id": str(despesa_id), "excluir_futuras": excluir_futuras},
         request.client.host if request.client else None,
         db_admin,
     )

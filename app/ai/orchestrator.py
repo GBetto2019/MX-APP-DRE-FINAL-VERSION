@@ -31,7 +31,7 @@ from app.services import chat_service
 
 logger = get_logger(__name__)
 
-MODELO = "claude-sonnet-4-5"
+MODELO = "claude-sonnet-4-6"
 MAX_TOOL_ITERACOES = 20   # Limite duro — evita loop/exfiltração (§5.3)
 
 

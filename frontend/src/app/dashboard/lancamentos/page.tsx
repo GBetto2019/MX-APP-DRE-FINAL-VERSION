@@ -14,6 +14,7 @@ interface Despesa {
   id: string; competencia: string; tipo_lancamento_id: string | null; banco_id: string | null
   tipo_nome: string | null; categoria: string | null; descricao: string
   centro_custo: string; banco_nome: string | null; valor: number; paga_em: string | null; status: string
+  recorrente: boolean; parcela_atual: number | null; parcela_total: number | null
 }
 interface DespesasResp { total: number; items: Despesa[]; soma_total: number; total_pendentes: number }
 
@@ -103,37 +104,78 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
     tipo_lancamento_id: despesa?.tipo_lancamento_id ?? '',
     banco_id:           despesa?.banco_id ?? '',
     descricao:          despesa?.descricao ?? '',
-    valor:              despesa ? String(despesa.valor) : '',
     competencia:        despesa ? despesa.competencia.slice(0, 7) : mesAnterior()[0].slice(0, 7),
     paga_em:            despesa?.paga_em ?? '',
     centro_custo:       despesa?.centro_custo ?? 'matriz',
+    recorrente:         despesa?.recorrente ?? false,
+    // Parcelamento
+    valor_total:        despesa ? String(despesa.valor * (despesa.parcela_total ?? 1)) : '',
+    num_parcelas:       String(despesa?.parcela_total ?? 1),
   })
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }))
+
+  const numParcelas = Math.max(1, parseInt(form.num_parcelas) || 1)
+  const valorTotal  = parseFloat(form.valor_total) || 0
+  const valorMensal = numParcelas > 1 && valorTotal > 0 ? valorTotal / numParcelas : valorTotal
+  const parcelado   = numParcelas > 1
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
+    if (valorMensal <= 0) { setErro('Informe um valor válido.'); return }
     setSalvando(true)
     setErro(null)
     const [y, m] = form.competencia.split('-')
-    const payload: Record<string, unknown> = {
-      tipo_lancamento_id: form.tipo_lancamento_id || null,
-      banco_id:           form.banco_id || null,
-      descricao:          form.descricao,
-      subcategoria:       form.descricao,
-      valor:              parseFloat(form.valor),
-      competencia:        `${y}-${m}-01`,
-      centro_custo:       form.centro_custo,
-    }
-    if (form.paga_em) payload.paga_em = form.paga_em
-    if (!editando && !form.tipo_lancamento_id) payload.categoria = 'outros'
 
     try {
       if (editando) {
+        const payload: Record<string, unknown> = {
+          tipo_lancamento_id: form.tipo_lancamento_id || null,
+          banco_id:           form.banco_id || null,
+          descricao:          form.descricao,
+          subcategoria:       form.descricao,
+          valor:              valorMensal,
+          competencia:        `${y}-${m}-01`,
+          centro_custo:       form.centro_custo,
+        }
+        if (form.paga_em) payload.paga_em = form.paga_em
         await api.patch(`/lancamentos/despesas/${despesa!.id}`, token, payload)
+      } else if (parcelado) {
+        // Cria N parcelas, uma por mês
+        for (let i = 0; i < numParcelas; i++) {
+          const d = new Date(Number(y), Number(m) - 1 + i, 1)
+          const cy = d.getFullYear()
+          const cm = String(d.getMonth() + 1).padStart(2, '0')
+          const payload: Record<string, unknown> = {
+            tipo_lancamento_id: form.tipo_lancamento_id || null,
+            banco_id:           form.banco_id || null,
+            descricao:          form.descricao,
+            subcategoria:       form.descricao,
+            valor:              valorMensal,
+            competencia:        `${cy}-${cm}-01`,
+            centro_custo:       form.centro_custo,
+            recorrente:         false,
+            parcela_atual:      i + 1,
+            parcela_total:      numParcelas,
+          }
+          if (!form.tipo_lancamento_id) payload.categoria = 'outros'
+          await api.post('/lancamentos/despesas', token, payload)
+        }
       } else {
+        const payload: Record<string, unknown> = {
+          tipo_lancamento_id: form.tipo_lancamento_id || null,
+          banco_id:           form.banco_id || null,
+          descricao:          form.descricao,
+          subcategoria:       form.descricao,
+          valor:              valorMensal,
+          competencia:        `${y}-${m}-01`,
+          centro_custo:       form.centro_custo,
+          recorrente:         form.recorrente,
+        }
+        if (form.paga_em) payload.paga_em = form.paga_em
+        if (!form.tipo_lancamento_id) payload.categoria = 'outros'
         await api.post('/lancamentos/despesas', token, payload)
       }
       onSaved()
@@ -185,28 +227,56 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
               placeholder="Ex: Aluguel sede matriz" className={inputCls} />
           </Campo>
 
+          {/* Valor e Parcelamento */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-            <Campo label="Valor (R$) *">
-              <input required type="number" step="0.01" min="0" value={form.valor}
-                onChange={e => set('valor', e.target.value)} placeholder="0,00" className={inputCls} />
+            <Campo label={parcelado ? 'Valor Total (R$) *' : 'Valor (R$) *'}>
+              <input required type="number" step="0.01" min="0.01" value={form.valor_total}
+                onChange={e => set('valor_total', e.target.value)} placeholder="0,00" className={inputCls} />
             </Campo>
-            <Campo label="Competência *">
-              <input required type="month" value={form.competencia}
-                onChange={e => set('competencia', e.target.value)} className={inputCls} />
+            <Campo label="Nº de Parcelas">
+              <input type="number" min="1" max="60" value={form.num_parcelas}
+                onChange={e => set('num_parcelas', e.target.value)} className={inputCls}
+                disabled={editando} />
             </Campo>
           </div>
 
+          {parcelado && valorTotal > 0 && (
+            <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
+              Valor mensal calculado: <strong>R$ {valorMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> × {numParcelas} parcelas
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            <Campo label="Competência (1ª parcela) *">
+              <input required type="month" value={form.competencia}
+                onChange={e => set('competencia', e.target.value)} className={inputCls} />
+            </Campo>
             <Campo label="Centro de custo">
               <select value={form.centro_custo} onChange={e => set('centro_custo', e.target.value)} className={selectCls}>
                 <option value="matriz">Matriz</option>
                 <option value="aguas_lindoia">Águas Lindoia</option>
               </select>
             </Campo>
+          </div>
+
+          {!parcelado && !editando && (
             <Campo label="Pago em">
               <input type="date" value={form.paga_em} onChange={e => set('paga_em', e.target.value)} className={inputCls} />
             </Campo>
-          </div>
+          )}
+
+          {/* Recorrente — só aparece quando não é parcelado e não está editando */}
+          {!parcelado && !editando && (
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form.recorrente as boolean}
+                onChange={e => set('recorrente', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-[#071934] focus:ring-[#071934]"
+              />
+              <span className="text-sm text-gray-700">Despesa recorrente (repete todo mês)</span>
+            </label>
+          )}
 
           {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{erro}</p>}
 
@@ -217,7 +287,7 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
             </button>
             <button type="submit" disabled={salvando}
               className="rounded-lg bg-[#071934] px-5 py-2 text-sm font-medium text-white hover:bg-[#0E2444] disabled:opacity-60">
-              {salvando ? 'Salvando…' : editando ? 'Salvar alterações' : 'Salvar'}
+              {salvando ? 'Salvando…' : editando ? 'Salvar alterações' : parcelado ? `Criar ${numParcelas} parcelas` : 'Salvar'}
             </button>
           </div>
         </form>
@@ -226,17 +296,21 @@ function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: Modal
   )
 }
 
+// Tipos de receita com valor único mensal
+const TIPOS_VALOR_UNICO = ['comissões de vendas', 'comissões - adicionais / premiações', 'receitas de vendas']
+
 // ── Modal de Receita (criar e editar) ──────────────────────────
 interface ModalReceitaProps {
   token: string
   tipos: TipoLancamento[]
   bancos: Banco[]
   receita?: Receita
+  receitasCarregadas?: Receita[]
   onClose: () => void
   onSaved: () => void
 }
 
-function ModalReceita({ token, tipos, bancos, receita, onClose, onSaved }: ModalReceitaProps) {
+function ModalReceita({ token, tipos, bancos, receita, receitasCarregadas, onClose, onSaved }: ModalReceitaProps) {
   const editando = !!receita
   const [form, setForm] = useState({
     tipo_lancamento_id: receita?.tipo_lancamento_id ?? '',
@@ -253,17 +327,39 @@ function ModalReceita({ token, tipos, bancos, receita, onClose, onSaved }: Modal
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
+  // Detecta se o tipo selecionado é de valor único mensal
+  const tipoSelecionado = tipos.find(t => t.id === form.tipo_lancamento_id)
+  const isTipoUnico = tipoSelecionado
+    ? TIPOS_VALOR_UNICO.some(n => tipoSelecionado.nome.toLowerCase().includes(n))
+    : false
+
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
     setSalvando(true)
     setErro(null)
     const [y, m] = form.competencia.split('-')
+    const compMes = `${y}-${m}-01`
+
+    // Verificação frontend de duplicata para tipos únicos mensais
+    if (!editando && isTipoUnico && receitasCarregadas) {
+      const existe = receitasCarregadas.some(r =>
+        r.tipo_lancamento_id === form.tipo_lancamento_id &&
+        r.competencia.slice(0, 7) === form.competencia &&
+        r.id !== receita?.id
+      )
+      if (existe) {
+        setErro(`Já existe um lançamento de "${tipoSelecionado?.nome}" para este mês. Edite o registro existente.`)
+        setSalvando(false)
+        return
+      }
+    }
+
     const payload: Record<string, unknown> = {
       tipo_lancamento_id: form.tipo_lancamento_id || null,
       banco_id:           form.banco_id || null,
       descricao:          form.descricao,
       valor:              parseFloat(form.valor),
-      competencia:        `${y}-${m}-01`,
+      competencia:        compMes,
       centro_custo:       form.centro_custo,
     }
     if (form.recebido_em) payload.recebido_em = form.recebido_em
@@ -312,6 +408,12 @@ function ModalReceita({ token, tipos, bancos, receita, onClose, onSaved }: Modal
               </select>
             </Campo>
           </div>
+
+          {isTipoUnico && (
+            <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
+              Este tipo permite apenas <strong>1 lançamento por mês</strong>. Duplicatas são bloqueadas automaticamente.
+            </div>
+          )}
 
           <Campo label="Descrição *">
             <input required value={form.descricao} onChange={e => set('descricao', e.target.value)}
@@ -384,6 +486,8 @@ export default function LancamentosPage() {
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null)
   const [deletando, setDeletando] = useState(false)
   const [erroDelete, setErroDelete] = useState<string | null>(null)
+  // Dialog para exclusão de parcelas futuras
+  const [dialogParcelas, setDialogParcelas] = useState<{ id: string; total: number } | null>(null)
 
   function mesParaDatas(m: string): [string, string] {
     const [y, mo] = m.split('-')
@@ -426,22 +530,37 @@ export default function LancamentosPage() {
   const totalReceitas = receitas?.soma_total ?? 0
   const saldo = totalReceitas - totalDespesas
 
-  async function deletarDespesa(id: string) {
+  async function deletarDespesa(id: string, excluirFuturas = false) {
     if (!token) return
     setDeletando(true)
     setErroDelete(null)
     try {
-      await api.delete(`/lancamentos/despesas/${id}`, token)
+      const params = excluirFuturas ? { excluir_futuras: 'true' } : undefined
+      await api.delete(`/lancamentos/despesas/${id}`, token, params)
       setDespesas(prev => {
         if (!prev) return prev
-        const items = prev.items.filter(d => d.id !== id)
+        // Se excluiu futuras, remove da lista todas as parcelas com parcela_atual >= atual
+        const despesaExcluida = prev.items.find(d => d.id === id)
+        const items = excluirFuturas && despesaExcluida?.parcela_total
+          ? prev.items.filter(d =>
+              d.id !== id &&
+              !(
+                d.tipo_lancamento_id === despesaExcluida.tipo_lancamento_id &&
+                d.descricao === despesaExcluida.descricao &&
+                d.parcela_total === despesaExcluida.parcela_total &&
+                (despesaExcluida.parcela_atual == null || (d.parcela_atual ?? 0) > (despesaExcluida.parcela_atual ?? 0))
+              )
+            )
+          : prev.items.filter(d => d.id !== id)
         const soma_total = items.reduce((acc, d) => acc + Number(d.valor), 0)
         return { ...prev, items, total: items.length, soma_total }
       })
       setConfirmandoId(null)
+      setDialogParcelas(null)
     } catch (e) {
       setErroDelete(e instanceof Error ? e.message : 'Erro ao excluir despesa.')
       setConfirmandoId(null)
+      setDialogParcelas(null)
     } finally {
       setDeletando(false)
     }
@@ -482,9 +601,42 @@ export default function LancamentosPage() {
         <ModalReceita
           token={token} tipos={tipos} bancos={bancos}
           receita={editandoReceita ?? undefined}
+          receitasCarregadas={receitas?.items}
           onClose={() => { setModalReceita(false); setEditandoReceita(null) }}
           onSaved={buscarReceitas}
         />
+      )}
+
+      {/* Dialog: excluir parcelas futuras */}
+      {dialogParcelas && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-base font-bold text-[#071934]">Excluir parcela</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Esta despesa faz parte de um grupo de <strong>{dialogParcelas.total} parcelas</strong>.
+              Deseja excluir também as parcelas futuras?
+            </p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => { setDialogParcelas(null); setConfirmandoId(null) }}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button
+                onClick={() => deletarDespesa(dialogParcelas.id, false)}
+                disabled={deletando}
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
+                Só esta parcela
+              </button>
+              <button
+                onClick={() => deletarDespesa(dialogParcelas.id, true)}
+                disabled={deletando}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
+                {deletando ? 'Excluindo…' : 'Esta e as futuras'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="space-y-6">
@@ -616,7 +768,15 @@ export default function LancamentosPage() {
                   <div key={d.id} className="px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-gray-800">{d.descricao}</p>
+                        <p className="truncate text-xs font-medium text-gray-800">
+                          {d.descricao}
+                          {d.parcela_total && d.parcela_total > 1 && (
+                            <span className="ml-1 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">{d.parcela_atual}/{d.parcela_total}</span>
+                          )}
+                          {d.recorrente && !d.parcela_total && (
+                            <span className="ml-1 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">recorrente</span>
+                          )}
+                        </p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           <Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} />
                           <StatusBadge status={d.status} />
@@ -645,7 +805,7 @@ export default function LancamentosPage() {
                       ) : (
                         <span className="inline-flex items-center gap-2">
                           <button onClick={() => setEditandoDespesa(d)} className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"><IconLapis /></button>
-                          <button onClick={() => setConfirmandoId(d.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
+                          <button onClick={() => d.parcela_total && d.parcela_total > 1 ? setDialogParcelas({ id: d.id, total: d.parcela_total }) : setConfirmandoId(d.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
                         </span>
                       )}
                     </div>
@@ -679,7 +839,17 @@ export default function LancamentosPage() {
                       <tr key={d.id} className="border-t border-gray-50 hover:bg-gray-50">
                         <td className="px-4 py-2 text-gray-600">{fmtCompetencia(d.competencia)}</td>
                         <td className="px-4 py-2"><Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} /></td>
-                        <td className="px-4 py-2 text-gray-700">{d.descricao}</td>
+                        <td className="px-4 py-2 text-gray-700">
+                          <span>{d.descricao}</span>
+                          {d.parcela_total && d.parcela_total > 1 && (
+                            <span className="ml-1.5 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
+                              {d.parcela_atual}/{d.parcela_total}
+                            </span>
+                          )}
+                          {d.recorrente && !d.parcela_total && (
+                            <span className="ml-1.5 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">recorrente</span>
+                          )}
+                        </td>
                         <td className="px-4 py-2 capitalize text-gray-600">{d.centro_custo.replace('_', ' ')}</td>
                         <td className="px-4 py-2 text-gray-600">{d.banco_nome ?? '—'}</td>
                         <td className="px-4 py-2 text-right font-medium tabular-nums text-red-500">{fmtBRL(d.valor)}</td>
@@ -698,7 +868,7 @@ export default function LancamentosPage() {
                           ) : (
                             <span className="inline-flex items-center gap-2">
                               <button onClick={() => setEditandoDespesa(d)} className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"><IconLapis /></button>
-                              <button onClick={() => setConfirmandoId(d.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
+                              <button onClick={() => d.parcela_total && d.parcela_total > 1 ? setDialogParcelas({ id: d.id, total: d.parcela_total }) : setConfirmandoId(d.id)} className="text-gray-300 hover:text-red-400 transition-colors" title="Excluir"><IconLixo /></button>
                             </span>
                           )}
                         </td>

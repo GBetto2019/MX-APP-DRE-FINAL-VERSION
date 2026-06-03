@@ -444,7 +444,28 @@ async def atualizar_despesa(despesa_id: UUID, payload: DespesaUpdate, db: Client
     )
 
 
-async def deletar_despesa(despesa_id: UUID, db: Client) -> None:
+async def deletar_despesa(despesa_id: UUID, db: Client, excluir_futuras: bool = False) -> None:
+    # Busca a despesa antes de excluir para identificar parcelas irmãs
+    if excluir_futuras:
+        resp = db.table("despesas").select(
+            "tipo_lancamento_id, descricao, valor, parcela_total, competencia, criado_por"
+        ).eq("id", str(despesa_id)).neq("status", "excluida").maybe_single().execute()
+
+        if resp and getattr(resp, "data", None):
+            row = resp.data
+            if row.get("parcela_total") and row.get("parcela_total") > 1:
+                # Exclui todas as parcelas futuras do mesmo grupo
+                q = db.table("despesas").update({"status": "excluida"}) \
+                    .eq("descricao", row["descricao"]) \
+                    .eq("parcela_total", row["parcela_total"]) \
+                    .neq("status", "excluida") \
+                    .gt("competencia", row["competencia"])
+                if row.get("tipo_lancamento_id"):
+                    q = q.eq("tipo_lancamento_id", str(row["tipo_lancamento_id"]))
+                if row.get("criado_por"):
+                    q = q.eq("criado_por", str(row["criado_por"]))
+                q.execute()
+
     db.table("despesas").update({"status": "excluida"}).eq("id", str(despesa_id)).execute()
 
 
@@ -544,12 +565,38 @@ async def buscar_receitas(
     )
 
 
+_TIPOS_VALOR_UNICO = {"comissões de vendas", "comissões - adicionais / premiações", "receitas de vendas"}
+
+
 async def criar_receita_outra(
     payload: ReceitaOutraCreate,
     usuario: UsuarioAtual,
     db: Client,
 ) -> ReceitaItem:
     _verificar_periodo_aberto(payload.competencia, db)
+
+    # Bloqueia duplicata mensal para tipos de valor único
+    if payload.tipo_lancamento_id:
+        r_tipo = db.table("tipos_lancamento").select("nome").eq(
+            "id", str(payload.tipo_lancamento_id)
+        ).single().execute()
+        nome_tipo = (r_tipo.data or {}).get("nome", "").strip().lower()
+        if nome_tipo in _TIPOS_VALOR_UNICO:
+            comp_mes = date(payload.competencia.year, payload.competencia.month, 1).isoformat()
+            existente = (
+                db.table("receitas_outras")
+                .select("id")
+                .eq("tipo_lancamento_id", str(payload.tipo_lancamento_id))
+                .eq("competencia", comp_mes)
+                .maybe_single()
+                .execute()
+            )
+            if existente and getattr(existente, "data", None):
+                from fastapi import HTTPException, status as http_status
+                raise HTTPException(
+                    status_code=http_status.HTTP_409_CONFLICT,
+                    detail=f"Já existe um lançamento de '{(r_tipo.data or {}).get('nome')}' para este mês. Edite o registro existente.",
+                )
 
     dados: dict = {
         "descricao":    payload.descricao,

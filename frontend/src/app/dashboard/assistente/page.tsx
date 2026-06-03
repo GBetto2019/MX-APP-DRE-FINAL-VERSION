@@ -55,9 +55,21 @@ export default function AssistentePage() {
     setMensagens((prev) => [...prev, { role: 'assistant', content: '' }])
 
     try {
-      const res = await fetch(`${BASE}/chat/stream?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const body: Record<string, string> = { mensagem: texto }
+      if (conversaId) body.conversa_id = conversaId
+
+      const res = await fetch(`${BASE}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.detail ?? `HTTP ${res.status}`)
+      }
       if (!res.body) throw new Error('Stream indisponível')
       const reader = res.body.getReader()
       const dec = new TextDecoder()
@@ -67,19 +79,22 @@ export default function AssistentePage() {
         for (const line of dec.decode(value, { stream: true }).split('\n')) {
           if (!line.startsWith('data: ')) continue
           const payload = line.slice(6).trim()
-          if (payload === '[DONE]') continue
+          if (!payload) continue
           try {
             const p = JSON.parse(payload)
-            if (p.conversa_id) setConversaId(p.conversa_id)
-            if (p.texto) {
-              buffer += p.texto
+            if (p.tipo === 'conversa_id') setConversaId(p.conversa_id)
+            if (p.tipo === 'texto' && p.conteudo) {
+              buffer += p.conteudo
               setMensagens((prev) => {
                 const c = [...prev]
                 c[c.length - 1] = { role: 'assistant', content: buffer }
                 return c
               })
             }
-          } catch { /* linha parcial */ }
+            if (p.tipo === 'erro') throw new Error(p.mensagem ?? 'Erro no assistente')
+          } catch (parseErr) {
+            if (parseErr instanceof Error && parseErr.message !== 'Unexpected token') throw parseErr
+          }
         }
       }
     } catch (e) {
