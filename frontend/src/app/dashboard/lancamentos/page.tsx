@@ -341,11 +341,10 @@ function ModalReceita({ token, tipos, bancos, receita, receitasCarregadas, onClo
     const compMes = `${y}-${m}-01`
 
     // Verificação frontend de duplicata para tipos únicos mensais
-    if (!editando && isTipoUnico && receitasCarregadas) {
-      const existe = receitasCarregadas.some(r =>
+    if (!editando && isTipoUnico && Array.isArray(receitasCarregadas)) {
+      const existe = (receitasCarregadas as Receita[]).some((r: Receita) =>
         r.tipo_lancamento_id === form.tipo_lancamento_id &&
-        r.competencia.slice(0, 7) === form.competencia &&
-        r.id !== receita?.id
+        r.competencia.slice(0, 7) === form.competencia
       )
       if (existe) {
         setErro(`Já existe um lançamento de "${tipoSelecionado?.nome}" para este mês. Edite o registro existente.`)
