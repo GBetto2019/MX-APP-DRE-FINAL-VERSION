@@ -444,11 +444,6 @@ function ModalReceita({ token, tipos, receita, receitasCarregadas, onClose, onSa
             </Campo>
           </div>
 
-          <Campo label="Observação">
-            <input value={form.observacao} onChange={e => set('observacao', e.target.value)}
-              placeholder="Opcional" className={inputCls} />
-          </Campo>
-
           {/* Receita Recorrente */}
           {!editando && (
             <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
@@ -694,13 +689,13 @@ export default function LancamentosPage() {
             <div className="flex w-full gap-2 sm:w-auto">
               <button
                 onClick={() => { setAba('despesas'); setModalDespesa(true) }}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-[#071934] px-3 py-2.5 text-sm font-medium text-[#071934] hover:bg-[#071934] hover:text-white transition-colors sm:flex-none">
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-red-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition-colors sm:flex-none">
                 + Despesa
               </button>
               <button
                 onClick={() => { setAba('receitas'); setModalReceita(true) }}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#071934] px-3 py-2.5 text-sm font-medium text-white hover:bg-[#0E2444] sm:flex-none">
-                + Nova Receita
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-green-700 transition-colors sm:flex-none">
+                + Receita
               </button>
             </div>
           </div>

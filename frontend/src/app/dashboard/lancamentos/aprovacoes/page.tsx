@@ -27,7 +27,7 @@ interface CardProps {
 
 function DespesaCard({ despesa, processandoId, onAprovar, onIniciarRejeicao, onDragStart }: CardProps) {
   const ocupado = processandoId === despesa.id
-  const arrastavel = despesa.status === 'pendente' && !ocupado
+  const arrastavel = !ocupado
 
   return (
     <div
@@ -251,9 +251,9 @@ export default function AprovacoesPage() {
     if (dragId.current) { setRejeitandoId(dragId.current); dragId.current = null }
   }
 
-  const todas     = despesas
-  const pendentes = despesas.filter(d => d.status === 'pendente')
-  const aprovadas = despesas.filter(d => d.status === 'aprovada')
+  const lancadas   = despesas.filter(d => d.status !== 'rejeitada')
+  const pendentes  = despesas.filter(d => d.status === 'pendente')
+  const aprovadas  = despesas.filter(d => d.status === 'aprovada')
   const rejeitadas = despesas.filter(d => d.status === 'rejeitada')
 
   const somaAprovadas = aprovadas.reduce((s, d) => s + Number(d.valor), 0)
@@ -300,7 +300,7 @@ export default function AprovacoesPage() {
         {/* Resumo rápido */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           {[
-            { label: 'Total Lançadas',  valor: todas.length,      extra: '',                         cor: 'bg-slate-50  border-slate-200  text-slate-700' },
+            { label: 'Total Lançadas',  valor: lancadas.length,    extra: '',                         cor: 'bg-slate-50  border-slate-200  text-slate-700' },
             { label: 'Pendentes',       valor: pendentes.length,   extra: '',                         cor: 'bg-amber-50  border-amber-200  text-amber-800' },
             { label: 'Aprovadas',       valor: aprovadas.length,   extra: fmtBRL(somaAprovadas),      cor: 'bg-green-50  border-green-200  text-green-800' },
             { label: 'Rejeitadas',      valor: rejeitadas.length,  extra: '',                         cor: 'bg-red-50    border-red-200    text-red-800'   },
@@ -321,11 +321,11 @@ export default function AprovacoesPage() {
           // ── Kanban ──────────────────────────────────────────
           <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
 
-            {/* Coluna 1 — Lançadas (todas) */}
-            <KanbanColuna titulo="Lançadas" contagem={todas.length} cor="bg-slate-700" corTexto="text-white">
-              {todas.length === 0
+            {/* Coluna 1 — Lançadas (pendentes + aprovadas) */}
+            <KanbanColuna titulo="Lançadas" contagem={lancadas.length} cor="bg-slate-700" corTexto="text-white">
+              {lancadas.length === 0
                 ? <p className="py-10 text-center text-xs text-gray-400">Nenhuma despesa no período</p>
-                : todas.map(d => (
+                : lancadas.map(d => (
                     <DespesaCard key={d.id} despesa={d} processandoId={processandoId}
                       onDragStart={(id) => { dragId.current = id }} />
                   ))
