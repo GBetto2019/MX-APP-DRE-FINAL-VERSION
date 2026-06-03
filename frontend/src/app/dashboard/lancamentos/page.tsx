@@ -616,15 +616,15 @@ export default function LancamentosPage() {
                   <div key={d.id} className="px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-gray-800">{d.descricao}</p>
+                        <p className="truncate text-xs font-medium text-gray-800">{d.descricao}</p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           <Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} />
                           <StatusBadge status={d.status} />
                         </div>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-bold tabular-nums text-red-500">{fmtBRL(d.valor)}</p>
-                        <p className="mt-0.5 text-xs text-gray-400">{fmtCompetencia(d.competencia)}</p>
+                        <p className="text-xs font-bold tabular-nums text-red-500">{fmtBRL(d.valor)}</p>
+                        <p className="mt-0.5 text-[10px] text-gray-400">{fmtCompetencia(d.competencia)}</p>
                       </div>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
@@ -660,32 +660,32 @@ export default function LancamentosPage() {
               </div>
               {/* Desktop: table */}
               <div className="hidden overflow-x-auto sm:block">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
-                      <th className="px-5 py-3">Competência</th>
-                      <th className="px-5 py-3">Tipo</th>
-                      <th className="px-5 py-3">Descrição</th>
-                      <th className="px-5 py-3">Centro</th>
-                      <th className="px-5 py-3">Banco</th>
-                      <th className="px-5 py-3 text-right">Valor</th>
-                      <th className="px-5 py-3">Pago em</th>
-                      <th className="px-5 py-3">Status</th>
-                      <th className="px-3 py-3" />
+                    <tr className="border-b border-gray-100 text-left text-[11px] font-medium text-gray-500">
+                      <th className="px-4 py-2">Competência</th>
+                      <th className="px-4 py-2">Tipo</th>
+                      <th className="px-4 py-2">Descrição</th>
+                      <th className="px-4 py-2">Centro</th>
+                      <th className="px-4 py-2">Banco</th>
+                      <th className="px-4 py-2 text-right">Valor</th>
+                      <th className="px-4 py-2">Pago em</th>
+                      <th className="px-4 py-2">Status</th>
+                      <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody>
                     {(despesas?.items ?? []).map((d) => (
                       <tr key={d.id} className="border-t border-gray-50 hover:bg-gray-50">
-                        <td className="px-5 py-3 text-gray-600">{fmtCompetencia(d.competencia)}</td>
-                        <td className="px-5 py-3"><Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} /></td>
-                        <td className="px-5 py-3 text-gray-700">{d.descricao}</td>
-                        <td className="px-5 py-3 capitalize text-gray-600">{d.centro_custo.replace('_', ' ')}</td>
-                        <td className="px-5 py-3 text-gray-600">{d.banco_nome ?? '—'}</td>
-                        <td className="px-5 py-3 text-right font-medium tabular-nums text-red-500">{fmtBRL(d.valor)}</td>
-                        <td className="px-5 py-3 text-gray-400">{d.paga_em ?? '—'}</td>
-                        <td className="px-5 py-3"><StatusBadge status={d.status} /></td>
-                        <td className="px-3 py-3 text-right">
+                        <td className="px-4 py-2 text-gray-600">{fmtCompetencia(d.competencia)}</td>
+                        <td className="px-4 py-2"><Badge text={d.tipo_nome ?? d.categoria ?? '—'} cor={tipoCor(d.tipo_nome ?? d.categoria)} /></td>
+                        <td className="px-4 py-2 text-gray-700">{d.descricao}</td>
+                        <td className="px-4 py-2 capitalize text-gray-600">{d.centro_custo.replace('_', ' ')}</td>
+                        <td className="px-4 py-2 text-gray-600">{d.banco_nome ?? '—'}</td>
+                        <td className="px-4 py-2 text-right font-medium tabular-nums text-red-500">{fmtBRL(d.valor)}</td>
+                        <td className="px-4 py-2 text-gray-400">{d.paga_em ?? '—'}</td>
+                        <td className="px-4 py-2"><StatusBadge status={d.status} /></td>
+                        <td className="px-3 py-2 text-right">
                           {confirmandoId === d.id ? (
                             <span className="inline-flex items-center gap-2">
                               <button onClick={() => deletarDespesa(d.id)} disabled={deletando}
@@ -705,14 +705,14 @@ export default function LancamentosPage() {
                       </tr>
                     ))}
                     {(despesas?.items ?? []).length === 0 && (
-                      <tr><td colSpan={9} className="py-10 text-center text-sm text-gray-400">Nenhuma despesa no período</td></tr>
+                      <tr><td colSpan={9} className="py-10 text-center text-xs text-gray-400">Nenhuma despesa no período</td></tr>
                     )}
                   </tbody>
                   {(despesas?.soma_total ?? 0) > 0 && (
                     <tfoot>
                       <tr className="border-t-2 border-gray-100">
-                        <td colSpan={5} className="px-5 py-3 font-semibold text-gray-700">Total</td>
-                        <td className="px-5 py-3 text-right font-bold tabular-nums text-red-500">{fmtBRL(despesas!.soma_total)}</td>
+                        <td colSpan={5} className="px-4 py-2 font-semibold text-gray-700">Total</td>
+                        <td className="px-4 py-2 text-right font-bold tabular-nums text-red-500">{fmtBRL(despesas!.soma_total)}</td>
                         <td colSpan={3} />
                       </tr>
                     </tfoot>
@@ -730,14 +730,14 @@ export default function LancamentosPage() {
                   <div key={r.id} className="px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-gray-800">{r.descricao}</p>
+                        <p className="truncate text-xs font-medium text-gray-800">{r.descricao}</p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           <Badge text={r.tipo_nome ?? '—'} cor="bg-green-100 text-green-700" />
                         </div>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-bold tabular-nums text-green-600">{fmtBRL(r.valor)}</p>
-                        <p className="mt-0.5 text-xs text-gray-400">{fmtCompetencia(r.competencia)}</p>
+                        <p className="text-xs font-bold tabular-nums text-green-600">{fmtBRL(r.valor)}</p>
+                        <p className="mt-0.5 text-[10px] text-gray-400">{fmtCompetencia(r.competencia)}</p>
                       </div>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
@@ -769,30 +769,30 @@ export default function LancamentosPage() {
               </div>
               {/* Desktop: table */}
               <div className="hidden overflow-x-auto sm:block">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
-                      <th className="px-5 py-3">Competência</th>
-                      <th className="px-5 py-3">Tipo</th>
-                      <th className="px-5 py-3">Descrição</th>
-                      <th className="px-5 py-3">Centro</th>
-                      <th className="px-5 py-3">Banco</th>
-                      <th className="px-5 py-3 text-right">Valor</th>
-                      <th className="px-5 py-3">Recebido em</th>
-                      <th className="px-3 py-3" />
+                    <tr className="border-b border-gray-100 text-left text-[11px] font-medium text-gray-500">
+                      <th className="px-4 py-2">Competência</th>
+                      <th className="px-4 py-2">Tipo</th>
+                      <th className="px-4 py-2">Descrição</th>
+                      <th className="px-4 py-2">Centro</th>
+                      <th className="px-4 py-2">Banco</th>
+                      <th className="px-4 py-2 text-right">Valor</th>
+                      <th className="px-4 py-2">Recebido em</th>
+                      <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody>
                     {(receitas?.items ?? []).map((r) => (
                       <tr key={r.id} className="border-t border-gray-50 hover:bg-gray-50">
-                        <td className="px-5 py-3 text-gray-600">{fmtCompetencia(r.competencia)}</td>
-                        <td className="px-5 py-3"><Badge text={r.tipo_nome ?? '—'} cor="bg-green-100 text-green-700" /></td>
-                        <td className="px-5 py-3 text-gray-700">{r.descricao}</td>
-                        <td className="px-5 py-3 capitalize text-gray-600">{r.centro_custo?.replace('_',' ') ?? '—'}</td>
-                        <td className="px-5 py-3 text-gray-600">{r.banco_nome ?? '—'}</td>
-                        <td className="px-5 py-3 text-right font-medium tabular-nums text-green-600">{fmtBRL(r.valor)}</td>
-                        <td className="px-5 py-3 text-gray-400">{r.recebido_em ?? '—'}</td>
-                        <td className="px-3 py-3 text-right">
+                        <td className="px-4 py-2 text-gray-600">{fmtCompetencia(r.competencia)}</td>
+                        <td className="px-4 py-2"><Badge text={r.tipo_nome ?? '—'} cor="bg-green-100 text-green-700" /></td>
+                        <td className="px-4 py-2 text-gray-700">{r.descricao}</td>
+                        <td className="px-4 py-2 capitalize text-gray-600">{r.centro_custo?.replace('_',' ') ?? '—'}</td>
+                        <td className="px-4 py-2 text-gray-600">{r.banco_nome ?? '—'}</td>
+                        <td className="px-4 py-2 text-right font-medium tabular-nums text-green-600">{fmtBRL(r.valor)}</td>
+                        <td className="px-4 py-2 text-gray-400">{r.recebido_em ?? '—'}</td>
+                        <td className="px-3 py-2 text-right">
                           {confirmandoId === r.id ? (
                             <span className="inline-flex items-center gap-2">
                               <button onClick={() => deletarReceita(r.id)} disabled={deletando}
@@ -814,7 +814,7 @@ export default function LancamentosPage() {
                       </tr>
                     ))}
                     {(receitas?.items ?? []).length === 0 && (
-                      <tr><td colSpan={8} className="py-10 text-center text-sm text-gray-400">Nenhuma receita no período</td></tr>
+                      <tr><td colSpan={8} className="py-10 text-center text-xs text-gray-400">Nenhuma receita no período</td></tr>
                     )}
                   </tbody>
                 </table>

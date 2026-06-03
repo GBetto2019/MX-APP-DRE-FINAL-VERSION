@@ -93,7 +93,7 @@ export default function DrePage() {
           <div className="overflow-hidden rounded-2xl bg-white p-4 shadow-sm md:p-6">
             <h2 className="mb-4 font-semibold text-[#071934]">Demonstração de Resultados</h2>
             <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <tbody>
                 {LINHAS.map(({ key, label, total, deducao }) => {
                   const valor = dre.dre[key]
@@ -104,10 +104,10 @@ export default function DrePage() {
                       key={key}
                       className={total ? 'border-t-2 border-gray-100' : ''}
                     >
-                      <td className={`py-2 pr-4 ${total ? 'font-semibold text-[#071934]' : 'pl-3 text-gray-600'}`}>
+                      <td className={`py-1.5 pr-4 ${total ? 'font-semibold text-[#071934]' : 'pl-3 text-gray-600'}`}>
                         {label}
                       </td>
-                      <td className={`py-2 text-right tabular-nums font-${total ? 'semibold' : 'normal'} ${
+                      <td className={`py-1.5 text-right tabular-nums font-${total ? 'semibold' : 'normal'} ${
                         deducao || negativo ? 'text-red-500' : total ? 'text-[#071934]' : 'text-gray-700'
                       }`}>
                         {deducao && valor !== 0 ? `R$ ${Math.abs(valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}` : fmtBRL(valor)}

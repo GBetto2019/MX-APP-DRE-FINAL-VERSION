@@ -39,12 +39,12 @@ function DespesaCard({ despesa, processandoId, onAprovar, onIniciarRejeicao }: C
         <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 truncate max-w-[65%]">
           {despesa.tipo_nome ?? despesa.categoria ?? 'Outro'}
         </span>
-        <span className="text-sm font-bold text-red-500 tabular-nums whitespace-nowrap">
+        <span className="text-xs font-bold text-red-500 tabular-nums whitespace-nowrap">
           {fmtBRL(despesa.valor)}
         </span>
       </div>
 
-      <p className="mt-2 text-sm font-medium text-gray-800 line-clamp-2 leading-snug">
+      <p className="mt-2 text-xs font-medium text-gray-800 line-clamp-2 leading-snug">
         {despesa.descricao}
       </p>
 
