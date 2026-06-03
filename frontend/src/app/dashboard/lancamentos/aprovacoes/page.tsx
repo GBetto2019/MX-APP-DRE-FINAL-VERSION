@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
@@ -22,19 +22,22 @@ interface CardProps {
   processandoId: string | null
   onAprovar?: (id: string) => void
   onIniciarRejeicao?: (id: string) => void
+  onDragStart?: (id: string) => void
 }
 
-function DespesaCard({ despesa, processandoId, onAprovar, onIniciarRejeicao }: CardProps) {
+function DespesaCard({ despesa, processandoId, onAprovar, onIniciarRejeicao, onDragStart }: CardProps) {
   const ocupado = processandoId === despesa.id
-
-  const corStatus: Record<string, string> = {
-    pendente:  'bg-amber-100 text-amber-700',
-    aprovada:  'bg-green-100 text-green-700',
-    rejeitada: 'bg-red-100 text-red-600',
-  }
+  const arrastavel = despesa.status === 'pendente' && !ocupado
 
   return (
-    <div className={`rounded-xl border bg-white p-4 shadow-sm transition-opacity ${ocupado ? 'opacity-60' : ''}`}>
+    <div
+      draggable={arrastavel}
+      onDragStart={arrastavel && onDragStart ? (e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart(despesa.id) } : undefined}
+      className={`rounded-xl border bg-white p-4 shadow-sm transition-opacity select-none
+        ${ocupado ? 'opacity-60' : ''}
+        ${arrastavel ? 'cursor-grab active:cursor-grabbing active:shadow-lg active:scale-[1.02] transition-transform' : ''}
+      `}
+    >
       <div className="flex items-start justify-between gap-2">
         <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 truncate max-w-[65%]">
           {despesa.tipo_nome ?? despesa.categoria ?? 'Outro'}
@@ -48,10 +51,10 @@ function DespesaCard({ despesa, processandoId, onAprovar, onIniciarRejeicao }: C
         {despesa.descricao}
       </p>
 
-      <div className="mt-2 space-y-0.5 text-xs text-gray-400">
-        <p className="capitalize">{despesa.centro_custo.replace('_', ' ')}</p>
-        <p>{fmtCompetencia(despesa.competencia)}</p>
-        {despesa.banco_nome && <p>{despesa.banco_nome}</p>}
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-400">
+        <span className="capitalize">{despesa.centro_custo.replace('_', ' ')}</span>
+        <span>·</span>
+        <span>{fmtCompetencia(despesa.competencia)}</span>
       </div>
 
       {/* Motivo de rejeição */}
@@ -92,11 +95,19 @@ function DespesaCard({ despesa, processandoId, onAprovar, onIniciarRejeicao }: C
 }
 
 // ── Coluna do Kanban ───────────────────────────────────────────
-function KanbanColuna({
-  titulo, contagem, cor, corTexto, children,
-}: {
-  titulo: string; contagem: number; cor: string; corTexto: string; children: React.ReactNode
-}) {
+interface ColunaProps {
+  titulo: string
+  contagem: number
+  cor: string
+  corTexto: string
+  aceitaDrop?: boolean
+  onDrop?: () => void
+  children: React.ReactNode
+}
+
+function KanbanColuna({ titulo, contagem, cor, corTexto, aceitaDrop, onDrop, children }: ColunaProps) {
+  const [dragOver, setDragOver] = useState(false)
+
   return (
     <div className="flex w-[calc(100vw-2rem)] shrink-0 snap-start flex-col sm:w-auto sm:min-w-0">
       <div className={`mb-3 flex items-center justify-between rounded-xl px-4 py-2.5 ${cor}`}>
@@ -106,7 +117,12 @@ function KanbanColuna({
         </span>
       </div>
       <div
-        className="flex-1 space-y-3 overflow-y-auto pr-1"
+        onDragOver={aceitaDrop ? (e) => { e.preventDefault(); setDragOver(true) } : undefined}
+        onDragLeave={aceitaDrop ? () => setDragOver(false) : undefined}
+        onDrop={aceitaDrop && onDrop ? (e) => { e.preventDefault(); setDragOver(false); onDrop() } : undefined}
+        className={`flex-1 space-y-3 overflow-y-auto rounded-xl pr-1 transition-colors
+          ${dragOver ? 'bg-white/60 ring-2 ring-inset ring-white/50' : ''}
+        `}
         style={{ maxHeight: 'calc(100vh - 260px)' }}
       >
         {children}
@@ -175,6 +191,7 @@ export default function AprovacoesPage() {
   const [rejeitandoId, setRejeitandoId] = useState<string | null>(null)
   const [erroGlobal, setErroGlobal] = useState<string | null>(null)
   const [mes, setMes] = useState(mesAtual)
+  const dragId = useRef<string | null>(null)
 
   function mesParaDatas(m: string): [string, string] {
     const [y, mo] = m.split('-')
@@ -226,6 +243,14 @@ export default function AprovacoesPage() {
     }
   }
 
+  // Drag & Drop: soltar em coluna de destino
+  function handleDropAprovar() {
+    if (dragId.current) { handleAprovar(dragId.current); dragId.current = null }
+  }
+  function handleDropRejeitar() {
+    if (dragId.current) { setRejeitandoId(dragId.current); dragId.current = null }
+  }
+
   const todas     = despesas
   const pendentes = despesas.filter(d => d.status === 'pendente')
   const aprovadas = despesas.filter(d => d.status === 'aprovada')
@@ -254,7 +279,7 @@ export default function AprovacoesPage() {
               <span className="text-gray-300">/</span>
               <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Aprovação de Despesas</h1>
             </div>
-            <p className="mt-0.5 text-sm text-gray-500">Fluxo de aprovação para despesas lançadas pela equipe</p>
+            <p className="mt-0.5 text-sm text-gray-500">Arraste os cards para Aprovar ou Rejeitar</p>
           </div>
           <input
             type="month"
@@ -297,65 +322,46 @@ export default function AprovacoesPage() {
           <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
 
             {/* Coluna 1 — Lançadas (todas) */}
-            <KanbanColuna
-              titulo="Lançadas"
-              contagem={todas.length}
-              cor="bg-slate-700"
-              corTexto="text-white"
-            >
+            <KanbanColuna titulo="Lançadas" contagem={todas.length} cor="bg-slate-700" corTexto="text-white">
               {todas.length === 0
                 ? <p className="py-10 text-center text-xs text-gray-400">Nenhuma despesa no período</p>
                 : todas.map(d => (
-                    <DespesaCard key={d.id} despesa={d} processandoId={processandoId} />
+                    <DespesaCard key={d.id} despesa={d} processandoId={processandoId}
+                      onDragStart={(id) => { dragId.current = id }} />
                   ))
               }
             </KanbanColuna>
 
             {/* Coluna 2 — Pendente Aprovação */}
-            <KanbanColuna
-              titulo="Pendente Aprovação"
-              contagem={pendentes.length}
-              cor="bg-amber-500"
-              corTexto="text-white"
-            >
+            <KanbanColuna titulo="Pendente Aprovação" contagem={pendentes.length} cor="bg-amber-500" corTexto="text-white">
               {pendentes.length === 0
                 ? <p className="py-10 text-center text-xs text-amber-400">Nenhuma pendente 🎉</p>
                 : pendentes.map(d => (
-                    <DespesaCard
-                      key={d.id}
-                      despesa={d}
-                      processandoId={processandoId}
+                    <DespesaCard key={d.id} despesa={d} processandoId={processandoId}
                       onAprovar={handleAprovar}
                       onIniciarRejeicao={(id) => setRejeitandoId(id)}
+                      onDragStart={(id) => { dragId.current = id }}
                     />
                   ))
               }
             </KanbanColuna>
 
-            {/* Coluna 3 — Aprovadas */}
-            <KanbanColuna
-              titulo="Aprovadas"
-              contagem={aprovadas.length}
-              cor="bg-green-600"
-              corTexto="text-white"
-            >
+            {/* Coluna 3 — Aprovadas (drop zone) */}
+            <KanbanColuna titulo="Aprovadas" contagem={aprovadas.length} cor="bg-green-600" corTexto="text-white"
+              aceitaDrop onDrop={handleDropAprovar}>
               {aprovadas.length === 0
-                ? <p className="py-10 text-center text-xs text-green-300">Nenhuma aprovada</p>
+                ? <p className="py-10 text-center text-xs text-green-300">Arraste aqui para aprovar</p>
                 : aprovadas.map(d => (
                     <DespesaCard key={d.id} despesa={d} processandoId={processandoId} />
                   ))
               }
             </KanbanColuna>
 
-            {/* Coluna 4 — Rejeitadas */}
-            <KanbanColuna
-              titulo="Rejeitadas"
-              contagem={rejeitadas.length}
-              cor="bg-red-600"
-              corTexto="text-white"
-            >
+            {/* Coluna 4 — Rejeitadas (drop zone) */}
+            <KanbanColuna titulo="Rejeitadas" contagem={rejeitadas.length} cor="bg-red-600" corTexto="text-white"
+              aceitaDrop onDrop={handleDropRejeitar}>
               {rejeitadas.length === 0
-                ? <p className="py-10 text-center text-xs text-red-300">Nenhuma rejeitada</p>
+                ? <p className="py-10 text-center text-xs text-red-300">Arraste aqui para rejeitar</p>
                 : rejeitadas.map(d => (
                     <DespesaCard key={d.id} despesa={d} processandoId={processandoId} />
                   ))

@@ -310,22 +310,23 @@ interface ModalReceitaProps {
   onSaved: () => void
 }
 
-function ModalReceita({ token, tipos, bancos, receita, receitasCarregadas, onClose, onSaved }: ModalReceitaProps) {
+function ModalReceita({ token, tipos, receita, receitasCarregadas, onClose, onSaved }: Omit<ModalReceitaProps, 'bancos'>) {
   const editando = !!receita
   const [form, setForm] = useState({
     tipo_lancamento_id: receita?.tipo_lancamento_id ?? '',
-    banco_id:           receita?.banco_id ?? '',
     descricao:          receita?.descricao ?? '',
     valor:              receita ? String(receita.valor) : '',
     competencia:        receita ? receita.competencia.slice(0, 7) : mesAnterior()[0].slice(0, 7),
     recebido_em:        receita?.recebido_em ?? '',
     centro_custo:       receita?.centro_custo ?? 'matriz',
     observacao:         receita?.observacao ?? '',
+    recorrente:         false,
+    data_final:         '',
   })
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }))
 
   // Detecta se o tipo selecionado é de valor único mensal
   const tipoSelecionado = tipos.find(t => t.id === form.tipo_lancamento_id)
@@ -353,22 +354,31 @@ function ModalReceita({ token, tipos, bancos, receita, receitasCarregadas, onClo
       }
     }
 
-    const payload: Record<string, unknown> = {
+    const basePayload: Record<string, unknown> = {
       tipo_lancamento_id: form.tipo_lancamento_id || null,
-      banco_id:           form.banco_id || null,
       descricao:          form.descricao,
       valor:              parseFloat(form.valor),
-      competencia:        compMes,
       centro_custo:       form.centro_custo,
     }
-    if (form.recebido_em) payload.recebido_em = form.recebido_em
-    if (form.observacao)  payload.observacao  = form.observacao
+    if (form.recebido_em) basePayload.recebido_em = form.recebido_em
+    if (form.observacao)  basePayload.observacao  = form.observacao
 
     try {
       if (editando) {
-        await api.patch(`/lancamentos/receitas/${receita!.id}`, token, payload)
+        await api.patch(`/lancamentos/receitas/${receita!.id}`, token, { ...basePayload, competencia: `${form.competencia.split('-')[0]}-${form.competencia.split('-')[1]}-01` })
+      } else if (form.recorrente && form.data_final && form.data_final >= form.competencia) {
+        // Cria um registro por mês do período
+        const [sy, sm] = form.competencia.split('-').map(Number)
+        const [ey, em] = form.data_final.split('-').map(Number)
+        const meses = (ey - sy) * 12 + (em - sm) + 1
+        for (let i = 0; i < meses; i++) {
+          const d = new Date(sy, sm - 1 + i, 1)
+          const cy = d.getFullYear()
+          const cm = String(d.getMonth() + 1).padStart(2, '0')
+          await api.post('/lancamentos/receitas', token, { ...basePayload, competencia: `${cy}-${cm}-01` })
+        }
       } else {
-        await api.post('/lancamentos/receitas', token, payload)
+        await api.post('/lancamentos/receitas', token, { ...basePayload, competencia: `${form.competencia.split('-')[0]}-${form.competencia.split('-')[1]}-01` })
       }
       onSaved()
       onClose()
@@ -391,22 +401,14 @@ function ModalReceita({ token, tipos, bancos, receita, receitasCarregadas, onClo
         </div>
 
         <form onSubmit={salvar} className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-            <Campo label="Tipo de lançamento">
-              <select value={form.tipo_lancamento_id} onChange={e => set('tipo_lancamento_id', e.target.value)} className={selectCls}>
-                <option value="">Selecionar tipo</option>
-                {tipos.filter(t => t.natureza === 'receita').map(t => (
-                  <option key={t.id} value={t.id}>{t.nome}</option>
-                ))}
-              </select>
-            </Campo>
-            <Campo label="Banco">
-              <select value={form.banco_id} onChange={e => set('banco_id', e.target.value)} className={selectCls}>
-                <option value="">Sem banco</option>
-                {bancos.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
-              </select>
-            </Campo>
-          </div>
+          <Campo label="Tipo de lançamento">
+            <select value={form.tipo_lancamento_id} onChange={e => set('tipo_lancamento_id', e.target.value)} className={selectCls}>
+              <option value="">Selecionar tipo</option>
+              {tipos.filter(t => t.natureza === 'receita').map(t => (
+                <option key={t.id} value={t.id}>{t.nome}</option>
+              ))}
+            </select>
+          </Campo>
 
           {isTipoUnico && (
             <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
@@ -446,6 +448,41 @@ function ModalReceita({ token, tipos, bancos, receita, receitasCarregadas, onClo
             <input value={form.observacao} onChange={e => set('observacao', e.target.value)}
               placeholder="Opcional" className={inputCls} />
           </Campo>
+
+          {/* Receita Recorrente */}
+          {!editando && (
+            <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.recorrente as boolean}
+                  onChange={e => set('recorrente', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#071934] focus:ring-[#071934]"
+                />
+                <span className="text-sm font-medium text-gray-700">Receita Recorrente</span>
+              </label>
+              {form.recorrente && (
+                <Campo label="Repetir até (mês/ano) *">
+                  <input
+                    required={form.recorrente as boolean}
+                    type="month"
+                    value={form.data_final}
+                    min={form.competencia}
+                    onChange={e => set('data_final', e.target.value)}
+                    className={inputCls}
+                  />
+                </Campo>
+              )}
+              {form.recorrente && form.data_final && form.data_final >= form.competencia && (() => {
+                const [sy, sm] = form.competencia.split('-').map(Number)
+                const [ey, em] = form.data_final.split('-').map(Number)
+                const n = (ey - sy) * 12 + (em - sm) + 1
+                return n > 1 ? (
+                  <p className="text-xs text-blue-600">Serão criados <strong>{n} registros</strong> mensais.</p>
+                ) : null
+              })()}
+            </div>
+          )}
 
           {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{erro}</p>}
 
@@ -598,7 +635,7 @@ export default function LancamentosPage() {
       )}
       {(modalReceita || editandoReceita) && token && (
         <ModalReceita
-          token={token} tipos={tipos} bancos={bancos}
+          token={token} tipos={tipos}
           receita={editandoReceita ?? undefined}
           receitasCarregadas={receitas?.items}
           onClose={() => { setModalReceita(false); setEditandoReceita(null) }}
@@ -654,11 +691,18 @@ export default function LancamentosPage() {
               <input type="month" value={mes} onChange={(e) => setMes(e.target.value)}
                 className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none" />
             </div>
-            <button
-              onClick={() => aba === 'despesas' ? setModalDespesa(true) : setModalReceita(true)}
-              className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#071934] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0E2444] sm:w-auto">
-              + {aba === 'despesas' ? 'Nova Despesa' : 'Nova Receita'}
-            </button>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <button
+                onClick={() => { setAba('despesas'); setModalDespesa(true) }}
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-[#071934] px-3 py-2.5 text-sm font-medium text-[#071934] hover:bg-[#071934] hover:text-white transition-colors sm:flex-none">
+                + Despesa
+              </button>
+              <button
+                onClick={() => { setAba('receitas'); setModalReceita(true) }}
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#071934] px-3 py-2.5 text-sm font-medium text-white hover:bg-[#0E2444] sm:flex-none">
+                + Nova Receita
+              </button>
+            </div>
           </div>
         </div>
 

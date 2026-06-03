@@ -61,6 +61,36 @@ async def get_dre(
     return resultado
 
 
+@router.get("/impostos", summary="Soma de despesas de impostos no período")
+async def get_impostos_manuais(
+    request: Request,
+    inicio: date = Query(...),
+    fim:    date = Query(...),
+    usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
+):
+    """Retorna a soma das despesas cujo tipo de lançamento contém 'imposto'."""
+    token = request.headers.get("authorization", "").replace("Bearer ", "")
+    db = get_supabase_usuario(token)
+
+    resp = (
+        db.table("despesas")
+        .select("valor, tipos_lancamento(nome)")
+        .gte("competencia", inicio.isoformat())
+        .lte("competencia", fim.isoformat())
+        .neq("status", "excluida")
+        .neq("status", "rejeitada")
+        .execute()
+    )
+    from decimal import Decimal
+    total = Decimal(0)
+    for row in (resp.data or []):
+        nome_tipo = ((row.get("tipos_lancamento") or {}).get("nome") or "").lower()
+        if "imposto" in nome_tipo or "imposto" in (row.get("categoria") or "").lower():
+            total += Decimal(str(row.get("valor", 0)))
+
+    return {"total": float(total)}
+
+
 @router.get("/ramos", response_model=ReceitaRamoResponse, summary="Receita por ramo")
 async def get_receita_por_ramo(
     request: Request,

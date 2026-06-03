@@ -1,10 +1,10 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
 import { fmtBRL, mesAnterior } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DREResponse, LinhasDRE } from '@/types'
 
 interface ReceitaRamo { ramo_nome: string; receita_total: number }
@@ -12,9 +12,7 @@ interface ReceitaRamoResponse { items: ReceitaRamo[]; total: number }
 
 const LINHAS: { key: keyof LinhasDRE; label: string; total?: boolean; deducao?: boolean }[] = [
   { key: 'receita_bruta',             label: 'Receita Bruta',             total: true },
-  { key: 'estornos',                  label: '(-) Estornos',              deducao: true },
-  { key: 'impostos',                  label: '(-) Impostos',              deducao: true },
-  { key: 'receita_liquida',           label: '= Receita Líquida',         total: true },
+  { key: 'impostos',                  label: '(-) Impostos Simples',      deducao: true },
   { key: 'repasses_produtores',       label: '(-) Repasses Produtores',   deducao: true },
   { key: 'margem_contribuicao',       label: '= Margem de Contribuição',  total: true },
   { key: 'despesas_fixas',            label: '(-) Despesas Fixas',        deducao: true },
@@ -46,19 +44,22 @@ export default function DrePage() {
   const [[inicio, fim], setPeriodo] = useState(mesAnterior())
   const [dre, setDre] = useState<DREResponse | null>(null)
   const [ramos, setRamos] = useState<ReceitaRamo[]>([])
+  const [impostosManual, setImpostosManual] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
 
   function buscar() {
     if (!token) return
     setLoading(true); setErro(null)
-    // DRE principal é obrigatório; gráfico de ramos é opcional (403 para comercial)
     api.get<DREResponse>(`/dre?inicio=${inicio}&fim=${fim}`, token)
       .then(d => {
         setDre(d)
-        api.get<ReceitaRamoResponse>(`/dre/ramos?inicio=${inicio}&fim=${fim}`, token)
-          .then(r => setRamos(r.items ?? []))
-          .catch(() => setRamos([]))
+        Promise.all([
+          api.get<ReceitaRamoResponse>(`/dre/ramos?inicio=${inicio}&fim=${fim}`, token)
+            .then(r => setRamos(r.items ?? [])).catch(() => setRamos([])),
+          api.get<{ total: number }>(`/dre/impostos?inicio=${inicio}&fim=${fim}`, token)
+            .then(r => setImpostosManual(r.total)).catch(() => setImpostosManual(null)),
+        ])
       })
       .catch((e) => setErro(e.message))
       .finally(() => setLoading(false))
@@ -100,10 +101,7 @@ export default function DrePage() {
                   if (valor == null) return null
                   const negativo = valor < 0
                   return (
-                    <tr
-                      key={key}
-                      className={total ? 'border-t-2 border-gray-100' : ''}
-                    >
+                    <tr key={key} className={total ? 'border-t-2 border-gray-100' : ''}>
                       <td className={`py-1.5 pr-4 ${total ? 'font-semibold text-[#071934]' : 'pl-3 text-gray-600'}`}>
                         {label}
                       </td>
@@ -115,6 +113,16 @@ export default function DrePage() {
                     </tr>
                   )
                 })}
+
+                {/* Linha de Impostos Manuais (lançados) */}
+                {impostosManual !== null && impostosManual > 0 && (
+                  <tr>
+                    <td className="pl-3 py-1.5 pr-4 text-gray-600">(-) Impostos Lançados</td>
+                    <td className="py-1.5 text-right tabular-nums text-red-500">
+                      R$ {impostosManual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
             </div>
@@ -143,5 +151,3 @@ export default function DrePage() {
     </div>
   )
 }
-
-
