@@ -45,8 +45,16 @@ interface Props {
 export function Sidebar({ role, email, nome, onSignOut, aberta = false, onFechar }: Props) {
   const pathname = usePathname()
 
-  const isActive = (href: string) =>
-    href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+  const allNav = [...NAV, ...NAV_BOTTOM]
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === '/dashboard'
+    if (pathname === href) return true
+    if (pathname.startsWith(href + '/')) {
+      // Ativo apenas se nenhum item mais específico também corresponder
+      return !allNav.some(n => n.href !== href && n.href.startsWith(href + '/') && pathname.startsWith(n.href))
+    }
+    return false
+  }
 
   const visible = (item: NavItem) => !item.roles || item.roles.includes(role)
 

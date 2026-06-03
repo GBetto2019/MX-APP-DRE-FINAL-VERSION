@@ -50,16 +50,47 @@ function renderInsight(text: string) {
   )
 }
 
+const CACHE_KEY = 'mx_insights_cache'
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 horas
+
+function lerCache(): string | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (!raw) return null
+    const { texto, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL_MS) return null
+    return texto as string
+  } catch { return null }
+}
+
+function salvarCache(texto: string) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ texto, ts: Date.now() })) } catch { /* ignorar */ }
+}
+
 // ── Componente de Insights do Mercado ─────────────────────────
 function InsightsMercado({ token, trigger }: { token: string; trigger: number }) {
   const [texto, setTexto] = useState('')
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
+  const isFirstLoad = useRef(true)
 
   useEffect(() => {
     if (!token) return
-    // Cancela requisição anterior se houver
+
+    // Na primeira carga, verifica cache — só busca se vencido
+    const forcar = !isFirstLoad.current
+    isFirstLoad.current = false
+
+    if (!forcar) {
+      const cached = lerCache()
+      if (cached) {
+        setTexto(cached)
+        setCarregando(false)
+        return
+      }
+    }
+
     abortRef.current?.abort()
     const ctrl = new AbortController()
     abortRef.current = ctrl
@@ -96,6 +127,7 @@ function InsightsMercado({ token, trigger }: { token: string; trigger: number })
             } catch { /* linha parcial */ }
           }
         }
+        if (buffer) salvarCache(buffer)
       } catch (e: unknown) {
         if (e instanceof Error && e.name !== 'AbortError') setErro(true)
       } finally {
@@ -104,6 +136,7 @@ function InsightsMercado({ token, trigger }: { token: string; trigger: number })
     })()
 
     return () => ctrl.abort()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, trigger])
 
   return (
@@ -247,12 +280,6 @@ export default function DashboardPage() {
               valor={d.ebitda}
               iconBg="bg-purple-50"
               icon={<IconTarget />}
-            />
-            <CardKPI
-              label="Resultado Líquido"
-              valor={d.resultado_liquido}
-              iconBg="bg-green-50"
-              icon={<IconDollar />}
             />
           </div>
 
