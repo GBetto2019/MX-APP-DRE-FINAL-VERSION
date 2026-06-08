@@ -61,9 +61,9 @@ _frontend_url_prod = os.getenv("FRONTEND_URL", "https://app.mxseguros.com.br")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=(
-        _frontend_urls_dev
+        _frontend_urls_dev + [_frontend_url_prod]
         if not cfg.is_production
-        else [_frontend_url_prod]
+        else [_frontend_url_prod] + _frontend_urls_dev
     ),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],

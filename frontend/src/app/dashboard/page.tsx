@@ -6,7 +6,8 @@ import { fmtBRL, mesAnterior } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
 import type { DashboardResponse } from '@/types'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+const stripBom = (s: string) => s.charCodeAt(0) === 0xfeff ? s.slice(1) : s
+const BASE = stripBom(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
