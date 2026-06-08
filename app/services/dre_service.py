@@ -19,7 +19,10 @@ from app.logging_config import get_logger
 from app.models.schemas import (
     ComissaoItem, ComissoesResponse,
     DREResponse, LinhasDRE,
+    EstornoItem, EstornosResponse,
+    MetaItem, MetasResponse,
     ReceitaRamoItem, ReceitaRamoResponse,
+    RepasseItem, RepassesResponse,
 )
 
 logger = get_logger(__name__)
@@ -138,6 +141,131 @@ async def buscar_comissoes(
 
     soma = sum(i.valor for i in items)
     return ComissoesResponse(total=len(items), items=items, soma_total=soma)
+
+
+# ── ESTORNOS ──────────────────────────────────────────────────
+
+async def buscar_estornos(
+    inicio: date,
+    fim: date,
+    usuario: UsuarioAtual,
+    db: Client,
+) -> EstornosResponse:
+    if _pool():
+        async with conn_as_user(usuario.user_id) as conn:
+            rows = await conn.fetch(
+                "SELECT id, apolice_id, valor, competencia_estorno AS competencia, motivo "
+                "FROM estornos "
+                "WHERE competencia_estorno >= $1 AND competencia_estorno <= $2 "
+                "ORDER BY competencia_estorno DESC",
+                inicio, fim,
+            )
+            items = [EstornoItem(
+                id=str(r["id"]),
+                apolice_id=str(r["apolice_id"]) if r.get("apolice_id") else None,
+                valor=Decimal(str(r["valor"])),
+                competencia=r["competencia"],
+                motivo=r.get("motivo"),
+            ) for r in rows]
+    else:
+        resp = (
+            db.table("estornos")
+            .select("id, apolice_id, valor, competencia_estorno, motivo")
+            .gte("competencia_estorno", inicio.isoformat())
+            .lte("competencia_estorno", fim.isoformat())
+            .order("competencia_estorno", desc=True)
+            .execute()
+        )
+        items = [EstornoItem(
+            id=row["id"],
+            apolice_id=row.get("apolice_id"),
+            valor=Decimal(str(row["valor"])),
+            competencia=row["competencia_estorno"],
+            motivo=row.get("motivo"),
+        ) for row in (resp.data or [])]
+
+    total = sum(i.valor for i in items)
+    return EstornosResponse(items=items, total=total, taxa_estorno=0.0, alerta_5pct=False)
+
+
+# ── METAS ─────────────────────────────────────────────────────
+
+async def buscar_metas(
+    competencia: date,
+    usuario: UsuarioAtual,
+    db: Client,
+) -> MetasResponse:
+    comp = date(competencia.year, competencia.month, 1)
+    items: list[MetaItem] = []
+    if _pool():
+        async with conn_as_user(usuario.user_id) as conn:
+            rows = await conn.fetch(
+                "SELECT * FROM atingimento_metas($1::date)", comp,
+            )
+            for r in rows:
+                d = dict(r)
+                items.append(MetaItem(**{k: str(v) if v is not None else None for k, v in d.items()}))
+    else:
+        try:
+            resp = db.rpc("atingimento_metas", {"p_competencia": comp.isoformat()}).execute()
+            for row in (resp.data or []):
+                items.append(MetaItem(**row))
+        except Exception as e:
+            logger.warning("buscar_metas_falhou", erro=str(e))
+
+    return MetasResponse(competencia=comp, items=items)
+
+
+# ── REPASSES ──────────────────────────────────────────────────
+
+async def buscar_repasses(
+    inicio: date,
+    fim: date,
+    usuario: UsuarioAtual,
+    db: Client,
+) -> RepassesResponse:
+    if _pool():
+        async with conn_as_user(usuario.user_id) as conn:
+            rows = await conn.fetch(
+                "SELECT id, comissao_id, produtor_id, valor, percentual, competencia, pago_em, status "
+                "FROM repasses "
+                "WHERE competencia >= $1 AND competencia <= $2 "
+                "ORDER BY competencia DESC",
+                inicio, fim,
+            )
+            items = [RepasseItem(
+                id=str(r["id"]),
+                comissao_id=str(r["comissao_id"]) if r.get("comissao_id") else None,
+                produtor_id=str(r["produtor_id"]) if r.get("produtor_id") else None,
+                valor=Decimal(str(r["valor"])),
+                percentual=Decimal(str(r["percentual"])) if r.get("percentual") else None,
+                competencia=r["competencia"],
+                pago_em=r.get("pago_em"),
+                status=r.get("status", "previsto"),
+            ) for r in rows]
+    else:
+        resp = (
+            db.table("repasses")
+            .select("id, comissao_id, produtor_id, valor, percentual, competencia, pago_em, status")
+            .gte("competencia", inicio.isoformat())
+            .lte("competencia", fim.isoformat())
+            .order("competencia", desc=True)
+            .execute()
+        )
+        items = [RepasseItem(
+            id=row["id"],
+            comissao_id=row.get("comissao_id"),
+            produtor_id=row.get("produtor_id"),
+            valor=Decimal(str(row["valor"])),
+            percentual=Decimal(str(row["percentual"])) if row.get("percentual") else None,
+            competencia=row["competencia"],
+            pago_em=row.get("pago_em"),
+            status=row.get("status", "previsto"),
+        ) for row in (resp.data or [])]
+
+    soma_previsto = sum(i.valor for i in items if i.status == "previsto")
+    soma_pago = sum(i.valor for i in items if i.status == "pago")
+    return RepassesResponse(items=items, soma_previsto=soma_previsto, soma_pago=soma_pago)
 
 
 # ── RECEITA POR RAMO ──────────────────────────────────────────

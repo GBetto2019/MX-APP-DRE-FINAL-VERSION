@@ -24,8 +24,8 @@ from app.services.dre_service import registrar_auditoria
 
 router = APIRouter(prefix="/lancamentos", tags=["Lançamentos"])
 
-_ROLES_LEITURA  = ("admin", "contador", "gestor", "comercial")
-_ROLES_ESCRITA  = ("admin", "contador", "gestor", "comercial")
+_ROLES_LEITURA   = ("admin", "contador", "gestor", "comercial")
+_ROLES_ESCRITA   = ("admin", "contador", "gestor", "comercial")
 _ROLES_APROVACAO = ("admin", "gestor")
 
 
@@ -34,6 +34,24 @@ def _exigir_leitura(usuario: UsuarioAtual) -> None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso não autorizado.",
+        )
+
+
+def _exigir_despesas_leitura(usuario: UsuarioAtual) -> None:
+    """Leitura de despesas restrita a Admin e Contador (RLS Task 2.2)."""
+    if usuario.role not in ("admin", "contador"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso às despesas restrito a Admin e Contador.",
+        )
+
+
+def _exigir_admin(usuario: UsuarioAtual) -> None:
+    """Remoção de despesas restrita a Admin."""
+    if usuario.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas Admin pode remover despesas.",
         )
 
 
@@ -62,7 +80,7 @@ async def listar_despesas(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     inicio, fim = periodo
-    _exigir_leitura(usuario)
+    _exigir_despesas_leitura(usuario)
     token = request.headers.get("authorization", "").replace("Bearer ", "")
     db = get_supabase_usuario(token)
     resultado = await financeiro_service.buscar_despesas(
@@ -145,7 +163,7 @@ async def deletar_despesa(
     excluir_futuras: bool = Query(False, description="Excluir também parcelas futuras do mesmo grupo"),
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
-    _exigir_leitura(usuario)
+    _exigir_admin(usuario)
     db_admin = get_supabase_admin()
     await financeiro_service.deletar_despesa(despesa_id, db_admin, excluir_futuras=excluir_futuras)
     await registrar_auditoria(

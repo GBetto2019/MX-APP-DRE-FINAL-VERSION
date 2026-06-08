@@ -374,6 +374,81 @@ class FechamentosResponse(RespostaBase):
     items: list[FechamentoItem]
 
 
+# ── METAS ─────────────────────────────────────────────────────
+
+class MetaCreate(RespostaBase):
+    escopo:     str
+    competencia: date
+    valor_alvo: Decimal
+    metrica:    str
+
+    @field_validator("escopo")
+    @classmethod
+    def escopo_valido(cls, v: str) -> str:
+        validos = {"global", "produtor", "equipe", "ramo"}
+        if v not in validos:
+            raise ValueError(f"escopo deve ser um de: {validos}")
+        return v
+
+    @field_validator("valor_alvo")
+    @classmethod
+    def valor_positivo(cls, v: Decimal) -> Decimal:
+        if v <= 0:
+            raise ValueError("valor_alvo deve ser um valor positivo")
+        return v
+
+
+class MetaItem(RespostaBase):
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+    id: Any = None
+    escopo: str | None = None
+    metrica: str | None = None
+    valor_alvo: Decimal | None = None
+    valor_realizado: Decimal | None = None
+    percentual_atingido: float | None = None
+
+
+class MetasResponse(RespostaBase):
+    competencia: date
+    items:       list[MetaItem]
+
+
+# ── ESTORNOS ──────────────────────────────────────────────────
+
+class EstornoItem(RespostaBase):
+    id:         Any
+    apolice_id: Any = None
+    valor:      Decimal
+    competencia: date
+    motivo:     str | None = None
+
+
+class EstornosResponse(RespostaBase):
+    items:        list[EstornoItem]
+    total:        Decimal
+    taxa_estorno: float
+    alerta_5pct:  bool
+
+
+# ── REPASSES ──────────────────────────────────────────────────
+
+class RepasseItem(RespostaBase):
+    id:          Any = None
+    comissao_id: Any = None
+    produtor_id: Any = None
+    valor:       Decimal
+    percentual:  Decimal | None = None
+    competencia: date
+    pago_em:     date | None = None
+    status:      str = "previsto"
+
+
+class RepassesResponse(RespostaBase):
+    items:         list[RepasseItem]
+    soma_previsto: Decimal
+    soma_pago:     Decimal
+
+
 # ── DASHBOARD AGREGADO ────────────────────────────────────────
 
 class AlertaDashboard(RespostaBase):
@@ -383,11 +458,12 @@ class AlertaDashboard(RespostaBase):
 
 
 class DashboardResponse(RespostaBase):
-    periodo:        dict[str, date]
-    dre:            LinhasDRE
-    perfil:         str
-    alertas:        list[AlertaDashboard]
-    latencia_ms:    int   # tempo de execução server-side em ms
+    periodo:     dict[str, date]
+    dre:         LinhasDRE
+    perfil:      str
+    metas:       Any = None
+    alertas:     list[AlertaDashboard]
+    latencia_ms: int
 
 
 # ── ERROS ─────────────────────────────────────────────────────
