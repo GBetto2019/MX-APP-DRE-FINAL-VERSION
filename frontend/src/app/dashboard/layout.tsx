@@ -39,7 +39,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  if (!session) return null
+  if (!session) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F0F2F5]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#071934] border-t-transparent" />
+      </div>
+    )
+  }
 
   const role = usuario?.role ?? 'comercial'
   const email = usuario?.email ?? session.user.email ?? ''
