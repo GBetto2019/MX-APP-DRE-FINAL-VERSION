@@ -13,7 +13,6 @@ interface ReceitaRamoResponse { items: ReceitaRamo[]; total: number }
 const LINHAS: { key: keyof LinhasDRE; label: string; total?: boolean; deducao?: boolean }[] = [
   { key: 'receita_bruta',             label: 'Receita Bruta',             total: true },
   { key: 'impostos',                  label: '(-) Impostos Simples',      deducao: true },
-  { key: 'repasses_produtores',       label: '(-) Repasses Produtores',   deducao: true },
   { key: 'margem_contribuicao',       label: '= Margem de Contribuição',  total: true },
   { key: 'despesas_fixas',            label: '(-) Despesas Fixas',        deducao: true },
   { key: 'ebitda',                    label: '= EBITDA',                  total: true },
@@ -108,7 +107,7 @@ export default function DrePage() {
                       <td className={`py-1.5 text-right tabular-nums font-${total ? 'semibold' : 'normal'} ${
                         deducao || negativo ? 'text-red-500' : total ? 'text-[#071934]' : 'text-gray-700'
                       }`}>
-                        {deducao && valor !== 0 ? `R$ ${Math.abs(valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}` : fmtBRL(valor)}
+                        {deducao && valor !== 0 ? `- R$ ${Math.abs(valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}` : fmtBRL(valor)}
                       </td>
                     </tr>
                   )

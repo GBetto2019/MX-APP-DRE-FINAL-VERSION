@@ -192,6 +192,8 @@ export default function AprovacoesPage() {
   const [erroGlobal, setErroGlobal] = useState<string | null>(null)
   const [mes, setMes] = useState(mesAtual)
   const dragId = useRef<string | null>(null)
+  const kanbanRef = useRef<HTMLDivElement>(null)
+  const [colunaAtiva, setColunaAtiva] = useState(0)
 
   function mesParaDatas(m: string): [string, string] {
     const [y, mo] = m.split('-')
@@ -210,6 +212,23 @@ export default function AprovacoesPage() {
   }, [token, mes])
 
   useEffect(() => { buscar() }, [buscar])
+
+  useEffect(() => {
+    const el = kanbanRef.current
+    if (!el) return
+    const handler = () => {
+      const colWidth = el.scrollWidth / 4
+      setColunaAtiva(Math.round(el.scrollLeft / colWidth))
+    }
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => el.removeEventListener('scroll', handler)
+  }, [loading])
+
+  function scrollParaColuna(idx: number) {
+    if (!kanbanRef.current) return
+    const colWidth = kanbanRef.current.scrollWidth / 4
+    kanbanRef.current.scrollTo({ left: idx * colWidth, behavior: 'smooth' })
+  }
 
   async function handleAprovar(id: string) {
     if (!token) return
@@ -319,7 +338,8 @@ export default function AprovacoesPage() {
           </div>
         ) : (
           // ── Kanban ──────────────────────────────────────────
-          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
+          <div className="space-y-3">
+          <div ref={kanbanRef} className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
 
             {/* Coluna 1 — Lançadas (pendentes + aprovadas) */}
             <KanbanColuna titulo="Lançadas" contagem={lancadas.length} cor="bg-slate-700" corTexto="text-white">
@@ -368,6 +388,43 @@ export default function AprovacoesPage() {
               }
             </KanbanColuna>
 
+          </div>
+
+            {/* Navegação mobile — setas + dots */}
+            <div className="flex items-center justify-center gap-3 sm:hidden">
+              <button
+                onClick={() => scrollParaColuna(colunaAtiva - 1)}
+                disabled={colunaAtiva === 0}
+                aria-label="Coluna anterior"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm text-gray-600 disabled:opacity-25 transition-opacity"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                {['Lançadas', 'Pendentes', 'Aprovadas', 'Rejeitadas'].map((lbl, i) => (
+                  <button
+                    key={i}
+                    onClick={() => scrollParaColuna(i)}
+                    title={lbl}
+                    className={`rounded-full transition-all duration-200 ${
+                      i === colunaAtiva
+                        ? 'h-2 w-5 bg-[#071934]'
+                        : 'h-2 w-2 bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={() => scrollParaColuna(colunaAtiva + 1)}
+                disabled={colunaAtiva === 3}
+                aria-label="Próxima coluna"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm text-gray-600 disabled:opacity-25 transition-opacity"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
           </div>
         )}
       </div>

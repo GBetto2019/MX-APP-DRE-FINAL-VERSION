@@ -84,7 +84,7 @@ export function Sidebar({ role, email, nome, onSignOut, aberta = false, onFechar
       )}>
         {/* Logo */}
         <div className="flex items-center justify-center border-b border-white/10 px-5 py-3">
-          <Image src="/logo_beige.png" alt="MX Corretora de Seguros" width={120} height={40} className="object-contain" />
+          <Image src="/logo_beige.png" alt="MX Corretora de Seguros" width={160} height={53} className="object-contain" />
         </div>
 
         {/* Nav principal */}
