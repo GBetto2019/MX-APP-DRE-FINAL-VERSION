@@ -274,21 +274,22 @@ async def buscar_receita_por_ramo(
     inicio: date,
     fim: date,
     db: Client,
+    usuario_id: str = "system",
 ) -> ReceitaRamoResponse:
     if _pool():
-        async with conn_as_user("system") as conn:
+        async with conn_as_user(usuario_id) as conn:
             result = await conn.fetchval(
                 "SELECT receita_por_ramo($1::date, $2::date)",
                 inicio, fim,
-            ) or {}
-            rows = result.get("items", []) if isinstance(result, dict) else (result if isinstance(result, list) else [])
+            )
+            rows = result if isinstance(result, list) else []
     else:
         resp = db.rpc("receita_por_ramo", {
             "p_inicio": inicio.isoformat(),
             "p_fim":    fim.isoformat(),
         }).execute()
-        result = resp.data or {}
-        rows = result.get("items", []) if isinstance(result, dict) else []
+        result = resp.data
+        rows = result if isinstance(result, list) else []
 
     items = []
     total = Decimal(0)
