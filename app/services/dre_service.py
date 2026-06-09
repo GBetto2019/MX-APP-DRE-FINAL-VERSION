@@ -276,25 +276,11 @@ async def buscar_receita_por_ramo(
     db: Client,
     usuario_id: str = "system",
 ) -> ReceitaRamoResponse:
-    rows: list = []
-    if _pool():
-        try:
-            async with conn_as_user(usuario_id) as conn:
-                result = await conn.fetchval(
-                    "SELECT receita_por_ramo($1::date, $2::date)",
-                    inicio, fim,
-                )
-                rows = result if isinstance(result, list) else []
-        except Exception:
-            pass  # fallback to PostgREST below
-
-    if not rows:
-        resp = db.rpc("receita_por_ramo", {
-            "p_inicio": inicio.isoformat(),
-            "p_fim":    fim.isoformat(),
-        }).execute()
-        result = resp.data
-        rows = result if isinstance(result, list) else []
+    resp = db.rpc("receita_por_ramo", {
+        "p_inicio": inicio.isoformat(),
+        "p_fim":    fim.isoformat(),
+    }).execute()
+    rows: list = resp.data if isinstance(resp.data, list) else []
 
     items = []
     total = Decimal(0)
