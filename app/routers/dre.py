@@ -111,4 +111,4 @@ async def get_receita_por_ramo(
 
     token = request.headers.get("authorization", "").replace("Bearer ", "")
     db = get_supabase_usuario(token)
-    return await dre_service.buscar_receita_por_ramo(inicio, fim, db, usuario.id)
+    return await dre_service.buscar_receita_por_ramo(inicio, fim, db, usuario.user_id)
