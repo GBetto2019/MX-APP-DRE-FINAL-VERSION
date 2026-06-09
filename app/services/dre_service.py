@@ -276,11 +276,15 @@ async def buscar_receita_por_ramo(
     db: Client,
     usuario_id: str = "system",
 ) -> ReceitaRamoResponse:
-    resp = db.rpc("receita_por_ramo", {
-        "p_inicio": inicio.isoformat(),
-        "p_fim":    fim.isoformat(),
-    }).execute()
-    rows: list = resp.data if isinstance(resp.data, list) else []
+    try:
+        resp = db.rpc("receita_por_ramo", {
+            "p_inicio": inicio.isoformat(),
+            "p_fim":    fim.isoformat(),
+        }).execute()
+        rows: list = resp.data if isinstance(resp.data, list) else []
+    except Exception as exc:
+        logger.error("erro_receita_por_ramo", exc=str(exc), exc_info=True)
+        rows = []
 
     items = []
     total = Decimal(0)
