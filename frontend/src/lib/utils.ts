@@ -28,3 +28,8 @@ export function mesAnterior(): [string, string] {
   const mes = hoje.getMonth() === 0 ? 12 : hoje.getMonth()
   return primeiroUltimoDia(ano, mes)
 }
+
+export function mesAtual(): [string, string] {
+  const hoje = new Date()
+  return primeiroUltimoDia(hoje.getFullYear(), hoje.getMonth() + 1)
+}

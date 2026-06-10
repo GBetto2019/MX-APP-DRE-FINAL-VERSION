@@ -316,20 +316,22 @@ async def buscar_receita_por_tipo(
 ) -> ReceitaTipoResponse:
     try:
         resp = (
-            db.table("receitas_outras")
+            db.table("despesas")
             .select("valor, tipos_lancamento(nome)")
             .gte("competencia", inicio.isoformat())
             .lte("competencia", fim.isoformat())
+            .neq("status", "excluida")
+            .neq("status", "rejeitada")
             .execute()
         )
         rows: list = resp.data if isinstance(resp.data, list) else []
     except Exception as exc:
-        logger.error("erro_receita_por_tipo", exc=str(exc), exc_info=True)
+        logger.error("erro_lancamentos_por_tipo", exc=str(exc), exc_info=True)
         rows = []
 
     agregado: dict[str, dict] = {}
     for row in rows:
-        nome = ((row.get("tipos_lancamento") or {}).get("nome") or "Sem tipo")
+        nome = ((row.get("tipos_lancamento") or {}).get("nome") or row.get("categoria") or "Outros")
         valor = Decimal(str(row.get("valor", 0)))
         if nome not in agregado:
             agregado[nome] = {"receita_total": Decimal(0), "num_lancamentos": 0}

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
-import { fmtBRL, mesAnterior } from '@/lib/utils'
+import { fmtBRL, mesAtual } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DREResponse, LinhasDRE } from '@/types'
@@ -40,7 +40,7 @@ function DateInput({ label, value, onChange }: { label: string; value: string; o
 
 export default function DrePage() {
   const { token } = useAuth()
-  const [[inicio, fim], setPeriodo] = useState(mesAnterior())
+  const [[inicio, fim], setPeriodo] = useState(mesAtual())
   const [dre, setDre] = useState<DREResponse | null>(null)
   const [tipos, setTipos] = useState<ReceitaTipo[]>([])
   const [impostosManual, setImpostosManual] = useState<number | null>(null)
@@ -129,7 +129,7 @@ export default function DrePage() {
 
           {/* Gráfico receita por tipo de lançamento */}
           <div className="rounded-2xl bg-white p-4 shadow-sm md:p-6">
-            <h2 className="mb-4 font-semibold text-[#071934]">Receita por Tipo de Lançamento</h2>
+            <h2 className="mb-4 font-semibold text-[#071934]">Despesas por Tipo de Lançamento</h2>
             {tipos.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={tipos} margin={{ left: -10, bottom: 10 }}>
@@ -141,7 +141,7 @@ export default function DrePage() {
               </ResponsiveContainer>
             ) : (
               <div className="flex h-64 items-center justify-center text-sm text-gray-400">
-                Sem dados de receita por tipo de lançamento no período
+                Sem despesas lançadas no período
               </div>
             )}
           </div>
