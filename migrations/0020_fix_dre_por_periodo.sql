@@ -1,8 +1,8 @@
 -- ================================================================
 -- 0020_fix_dre_por_periodo.sql
 -- Corrige dre_por_periodo para:
--- 1. Incluir despesas com tipo_lancamento_id (não apenas categoria legada)
--- 2. Excluir despesas rejeitadas e excluídas do cálculo
+-- 1. Contar apenas despesas com status 'aprovada' (exclui pendente, rejeitada, excluida)
+-- 2. Incluir despesas com tipo_lancamento_id (não apenas categoria legada)
 -- ================================================================
 
 CREATE OR REPLACE FUNCTION dre_por_periodo(p_inicio DATE, p_fim DATE)
@@ -46,7 +46,7 @@ BEGIN
     WHERE DATE_TRUNC('month', d.competencia)
           BETWEEN DATE_TRUNC('month', p_inicio)
               AND DATE_TRUNC('month', p_fim)
-      AND d.status NOT IN ('rejeitada', 'excluida')
+      AND d.status = 'aprovada'
       AND (
         d.categoria IN (
           'pessoal', 'comercial', 'administrativa_operacional',
@@ -68,7 +68,7 @@ BEGIN
     WHERE DATE_TRUNC('month', d.competencia)
           BETWEEN DATE_TRUNC('month', p_inicio)
               AND DATE_TRUNC('month', p_fim)
-      AND d.status NOT IN ('rejeitada', 'excluida')
+      AND d.status = 'aprovada'
       AND (
         d.categoria IN ('nao_operacional', 'investimento_imobilizado')
         OR (

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { useUser } from '@/contexts/UserContext'
 import { api } from '@/lib/api'
-import { fmtBRL, mesAnterior } from '@/lib/utils'
+import { fmtBRL, mesAtual } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
 
 interface TipoLancamento { id: string; nome: string; natureza: string }
@@ -94,17 +94,18 @@ interface ModalDespesaProps {
   tipos: TipoLancamento[]
   bancos: Banco[]
   despesa?: Despesa
+  mesDefault?: string
   onClose: () => void
   onSaved: () => void
 }
 
-function ModalDespesa({ token, tipos, bancos, despesa, onClose, onSaved }: ModalDespesaProps) {
+function ModalDespesa({ token, tipos, bancos, despesa, mesDefault, onClose, onSaved }: ModalDespesaProps) {
   const editando = !!despesa
   const [form, setForm] = useState({
     tipo_lancamento_id: despesa?.tipo_lancamento_id ?? '',
     banco_id:           despesa?.banco_id ?? '',
     descricao:          despesa?.descricao ?? '',
-    competencia:        despesa ? despesa.competencia.slice(0, 7) : mesAnterior()[0].slice(0, 7),
+    competencia:        despesa ? despesa.competencia.slice(0, 7) : (mesDefault ?? mesAtual()[0].slice(0, 7)),
     paga_em:            despesa?.paga_em ?? '',
     centro_custo:       despesa?.centro_custo ?? 'matriz',
     recorrente:         despesa?.recorrente ?? false,
@@ -306,17 +307,18 @@ interface ModalReceitaProps {
   bancos: Banco[]
   receita?: Receita
   receitasCarregadas?: Receita[]
+  mesDefault?: string
   onClose: () => void
   onSaved: () => void
 }
 
-function ModalReceita({ token, tipos, receita, receitasCarregadas, onClose, onSaved }: Omit<ModalReceitaProps, 'bancos'>) {
+function ModalReceita({ token, tipos, receita, receitasCarregadas, mesDefault, onClose, onSaved }: Omit<ModalReceitaProps, 'bancos'>) {
   const editando = !!receita
   const [form, setForm] = useState({
     tipo_lancamento_id: receita?.tipo_lancamento_id ?? '',
     descricao:          receita?.descricao ?? '',
     valor:              receita ? String(receita.valor) : '',
-    competencia:        receita ? receita.competencia.slice(0, 7) : mesAnterior()[0].slice(0, 7),
+    competencia:        receita ? receita.competencia.slice(0, 7) : (mesDefault ?? mesAtual()[0].slice(0, 7)),
     recebido_em:        receita?.recebido_em ?? '',
     centro_custo:       receita?.centro_custo ?? 'matriz',
     observacao:         receita?.observacao ?? '',
@@ -502,7 +504,7 @@ export default function LancamentosPage() {
   const { token } = useAuth()
   const { role } = useUser()
   const podeAprovar = role === 'admin' || role === 'gestor'
-  const [mes, setMes] = useState(mesAnterior()[0].slice(0, 7))
+  const [mes, setMes] = useState(mesAtual()[0].slice(0, 7))
   const [aba, setAba] = useState<'despesas' | 'receitas'>('despesas')
   const [despesas, setDespesas] = useState<DespesasResp | null>(null)
   const [receitas, setReceitas] = useState<ReceitasResp | null>(null)
@@ -624,6 +626,7 @@ export default function LancamentosPage() {
         <ModalDespesa
           token={token} tipos={tipos} bancos={bancos}
           despesa={editandoDespesa ?? undefined}
+          mesDefault={mes}
           onClose={() => { setModalDespesa(false); setEditandoDespesa(null) }}
           onSaved={buscarDespesas}
         />
@@ -633,6 +636,7 @@ export default function LancamentosPage() {
           token={token} tipos={tipos}
           receita={editandoReceita ?? undefined}
           receitasCarregadas={receitas?.items}
+          mesDefault={mes}
           onClose={() => { setModalReceita(false); setEditandoReceita(null) }}
           onSaved={buscarReceitas}
         />
