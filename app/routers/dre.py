@@ -1,6 +1,4 @@
-"""
-MX Seguros — DRE-IA | Router: /dre
-"""
+"""MX Seguros — DRE-IA | Router: /dre"""
 from __future__ import annotations
 
 from datetime import date

@@ -3,13 +3,12 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
-import { fmtBRL } from '@/lib/utils'
+import { fmtBRL, mesAtual } from '@/lib/utils'
 import type { Despesa, DespesasResponse } from '@/types'
 
-function mesAtual() {
-  const d = new Date()
-  d.setMonth(d.getMonth() - 1)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+function mesAtualStr() {
+  const [inicio] = mesAtual()
+  return inicio.slice(0, 7)
 }
 
 function fmtCompetencia(d: string) {
@@ -190,7 +189,7 @@ export default function AprovacoesPage() {
   const [processandoId, setProcessandoId] = useState<string | null>(null)
   const [rejeitandoId, setRejeitandoId] = useState<string | null>(null)
   const [erroGlobal, setErroGlobal] = useState<string | null>(null)
-  const [mes, setMes] = useState(mesAtual)
+  const [mes, setMes] = useState(mesAtualStr)
   const dragId = useRef<string | null>(null)
   const kanbanRef = useRef<HTMLDivElement>(null)
   const [colunaAtiva, setColunaAtiva] = useState(0)
