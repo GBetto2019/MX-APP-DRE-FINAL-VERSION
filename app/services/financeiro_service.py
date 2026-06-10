@@ -14,6 +14,7 @@ from uuid import UUID
 from supabase import Client
 
 from app.auth import UsuarioAtual
+from app.database import get_supabase_admin
 from app.models.schemas import (
     BancoCreate, BancoItem, BancoUpdate,
     CentroCustoCreate, CentroCustoItem, CentroCustoUpdate,
