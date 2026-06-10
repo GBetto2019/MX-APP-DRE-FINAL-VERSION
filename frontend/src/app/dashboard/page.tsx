@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/lib/api'
-import { fmtBRL, mesAnterior } from '@/lib/utils'
+import { fmtBRL, mesAtual } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/Skeleton'
 import type { DashboardResponse } from '@/types'
 
@@ -217,7 +217,7 @@ export default function DashboardPage() {
     if (!token) return
     setLoading(true)
     setErro(null)
-    const [inicio, fim] = mesAnterior()
+    const [inicio, fim] = mesAtual()
     api.get<DashboardResponse>(`/dashboard?inicio=${inicio}&fim=${fim}`, token)
       .then(setData)
       .catch((e) => setErro(e.message))
