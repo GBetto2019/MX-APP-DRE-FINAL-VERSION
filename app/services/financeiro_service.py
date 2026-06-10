@@ -575,19 +575,22 @@ async def criar_receita_outra(
 ) -> ReceitaItem:
     _verificar_periodo_aberto(payload.competencia, db)
 
+    db_admin = get_supabase_admin()
+
     # Bloqueia duplicata mensal para tipos de valor único
     if payload.tipo_lancamento_id:
-        r_tipo = db.table("tipos_lancamento").select("nome").eq(
+        r_tipo = db_admin.table("tipos_lancamento").select("nome").eq(
             "id", str(payload.tipo_lancamento_id)
         ).single().execute()
         nome_tipo = (r_tipo.data or {}).get("nome", "").strip().lower()
         if nome_tipo in _TIPOS_VALOR_UNICO:
             comp_mes = date(payload.competencia.year, payload.competencia.month, 1).isoformat()
             existente = (
-                db.table("receitas_outras")
+                db_admin.table("receitas_outras")
                 .select("id")
                 .eq("tipo_lancamento_id", str(payload.tipo_lancamento_id))
                 .eq("competencia", comp_mes)
+                .eq("criado_por", usuario.user_id)
                 .maybe_single()
                 .execute()
             )
@@ -616,7 +619,7 @@ async def criar_receita_outra(
     if payload.observacao:
         dados["observacao"] = payload.observacao
 
-    resp = db.table("receitas_outras").insert(dados).execute()
+    resp = db_admin.table("receitas_outras").insert(dados).execute()
     row = resp.data[0]
 
     tipo_nome  = None
@@ -649,6 +652,7 @@ async def criar_receita_outra(
 
 
 async def atualizar_receita_outra(receita_id: UUID, payload: ReceitaOutraUpdate, db: Client) -> ReceitaItem:
+    db_admin = get_supabase_admin()
     campos: dict = {}
     set_fields = payload.model_fields_set
     if "descricao" in set_fields and payload.descricao:
@@ -668,13 +672,13 @@ async def atualizar_receita_outra(receita_id: UUID, payload: ReceitaOutraUpdate,
     if "banco_id" in set_fields:
         campos["banco_id"] = str(payload.banco_id) if payload.banco_id else None
 
-    resp = db.table("receitas_outras").update(campos).eq("id", str(receita_id)).execute()
+    resp = db_admin.table("receitas_outras").update(campos).eq("id", str(receita_id)).execute()
     if not resp.data:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Receita não encontrada.")
 
     full = (
-        db.table("receitas_outras")
+        db_admin.table("receitas_outras")
         .select("id, descricao, valor, competencia, recebido_em, centro_custo, "
                 "observacao, tipo_lancamento_id, banco_id, tipos_lancamento(nome), bancos(nome)")
         .eq("id", str(receita_id))
