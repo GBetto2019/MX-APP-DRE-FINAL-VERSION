@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from app.auth import UsuarioAtual, obter_usuario_atual
 from app.database import get_supabase_usuario
 from app.middleware.rate_limit import limiter
-from app.models.schemas import DREResponse, DashboardResponse, ReceitaRamoResponse
+from app.models.schemas import DREResponse, DashboardResponse, ReceitaRamoResponse, ReceitaTipoResponse
 from app.services import dre_service
 
 router = APIRouter(prefix="/dre", tags=["DRE"])
@@ -112,3 +112,21 @@ async def get_receita_por_ramo(
     token = request.headers.get("authorization", "").replace("Bearer ", "")
     db = get_supabase_usuario(token)
     return await dre_service.buscar_receita_por_ramo(inicio, fim, db, usuario.user_id)
+
+
+@router.get("/tipos", response_model=ReceitaTipoResponse, summary="Receita por tipo de lançamento")
+async def get_receita_por_tipo(
+    request: Request,
+    inicio: date = Query(...),
+    fim:    date = Query(...),
+    usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
+):
+    """Receita manual agrupada por tipo de lançamento no período."""
+    if usuario.role not in ("admin", "gestor", "contador"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Receita por tipo disponível apenas para Admin, Gestor e Contador.",
+        )
+    token = request.headers.get("authorization", "").replace("Bearer ", "")
+    db = get_supabase_usuario(token)
+    return await dre_service.buscar_receita_por_tipo(inicio, fim, db)

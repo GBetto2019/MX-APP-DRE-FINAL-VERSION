@@ -85,6 +85,20 @@ class ReceitaRamoResponse(RespostaBase):
     total:    Decimal
 
 
+# ── RECEITA POR TIPO DE LANÇAMENTO ───────────────────────────
+
+class ReceitaTipoItem(RespostaBase):
+    tipo_nome:       str
+    receita_total:   Decimal
+    num_lancamentos: int
+
+
+class ReceitaTipoResponse(RespostaBase):
+    periodo: dict[str, date]
+    items:   list[ReceitaTipoItem]
+    total:   Decimal
+
+
 # ── CONFIGURAÇÕES: BANCOS ─────────────────────────────────────
 
 class BancoItem(RespostaBase):

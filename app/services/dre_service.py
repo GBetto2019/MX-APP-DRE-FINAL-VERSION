@@ -22,6 +22,7 @@ from app.models.schemas import (
     EstornoItem, EstornosResponse,
     MetaItem, MetasResponse,
     ReceitaRamoItem, ReceitaRamoResponse,
+    ReceitaTipoItem, ReceitaTipoResponse,
     RepasseItem, RepassesResponse,
 )
 
@@ -304,6 +305,43 @@ async def buscar_receita_por_ramo(
         items=items,
         total=total,
     )
+
+
+# ── RECEITA POR TIPO DE LANÇAMENTO ───────────────────────────
+
+async def buscar_receita_por_tipo(
+    inicio: date,
+    fim: date,
+    db: Client,
+) -> ReceitaTipoResponse:
+    try:
+        resp = (
+            db.table("receitas_outras")
+            .select("valor, tipos_lancamento(nome)")
+            .gte("competencia", inicio.isoformat())
+            .lte("competencia", fim.isoformat())
+            .execute()
+        )
+        rows: list = resp.data if isinstance(resp.data, list) else []
+    except Exception as exc:
+        logger.error("erro_receita_por_tipo", exc=str(exc), exc_info=True)
+        rows = []
+
+    agregado: dict[str, dict] = {}
+    for row in rows:
+        nome = ((row.get("tipos_lancamento") or {}).get("nome") or "Sem tipo")
+        valor = Decimal(str(row.get("valor", 0)))
+        if nome not in agregado:
+            agregado[nome] = {"receita_total": Decimal(0), "num_lancamentos": 0}
+        agregado[nome]["receita_total"] += valor
+        agregado[nome]["num_lancamentos"] += 1
+
+    items = [
+        ReceitaTipoItem(tipo_nome=nome, **dados)
+        for nome, dados in sorted(agregado.items(), key=lambda x: x[1]["receita_total"], reverse=True)
+    ]
+    total = sum(i.receita_total for i in items)
+    return ReceitaTipoResponse(periodo={"inicio": inicio, "fim": fim}, items=items, total=total)
 
 
 # ── AUDIT LOG ─────────────────────────────────────────────────

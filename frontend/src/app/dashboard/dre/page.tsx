@@ -7,8 +7,8 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DREResponse, LinhasDRE } from '@/types'
 
-interface ReceitaRamo { ramo_nome: string; receita_total: number }
-interface ReceitaRamoResponse { items: ReceitaRamo[]; total: number }
+interface ReceitaTipo { tipo_nome: string; receita_total: number }
+interface ReceitaTipoResponse { items: ReceitaTipo[]; total: number }
 
 const LINHAS: { key: keyof LinhasDRE; label: string; total?: boolean; deducao?: boolean }[] = [
   { key: 'receita_bruta',             label: 'Receita Bruta',             total: true },
@@ -42,7 +42,7 @@ export default function DrePage() {
   const { token } = useAuth()
   const [[inicio, fim], setPeriodo] = useState(mesAnterior())
   const [dre, setDre] = useState<DREResponse | null>(null)
-  const [ramos, setRamos] = useState<ReceitaRamo[]>([])
+  const [tipos, setTipos] = useState<ReceitaTipo[]>([])
   const [impostosManual, setImpostosManual] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -54,8 +54,8 @@ export default function DrePage() {
       .then(d => {
         setDre(d)
         Promise.all([
-          api.get<ReceitaRamoResponse>(`/dre/ramos?inicio=${inicio}&fim=${fim}`, token)
-            .then(r => setRamos(r.items ?? [])).catch(() => setRamos([])),
+          api.get<ReceitaTipoResponse>(`/dre/tipos?inicio=${inicio}&fim=${fim}`, token)
+            .then(r => setTipos(r.items ?? [])).catch(() => setTipos([])),
           api.get<{ total: number }>(`/dre/impostos?inicio=${inicio}&fim=${fim}`, token)
             .then(r => setImpostosManual(r.total)).catch(() => setImpostosManual(null)),
         ])
@@ -127,13 +127,13 @@ export default function DrePage() {
             </div>
           </div>
 
-          {/* Gráfico receita por ramo */}
+          {/* Gráfico receita por tipo de lançamento */}
           <div className="rounded-2xl bg-white p-4 shadow-sm md:p-6">
-            <h2 className="mb-4 font-semibold text-[#071934]">Receita por Ramo</h2>
-            {ramos.length > 0 ? (
+            <h2 className="mb-4 font-semibold text-[#071934]">Receita por Tipo de Lançamento</h2>
+            {tipos.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ramos} margin={{ left: -10, bottom: 10 }}>
-                  <XAxis dataKey="ramo_nome" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={55} interval={0} />
+                <BarChart data={tipos} margin={{ left: -10, bottom: 10 }}>
+                  <XAxis dataKey="tipo_nome" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={55} interval={0} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v: number) => fmtBRL(v)} />
                   <Bar dataKey="receita_total" fill="#071934" radius={[4,4,0,0]} name="Receita" />
@@ -141,7 +141,7 @@ export default function DrePage() {
               </ResponsiveContainer>
             ) : (
               <div className="flex h-64 items-center justify-center text-sm text-gray-400">
-                Sem dados de receita por ramo no período
+                Sem dados de receita por tipo de lançamento no período
               </div>
             )}
           </div>
