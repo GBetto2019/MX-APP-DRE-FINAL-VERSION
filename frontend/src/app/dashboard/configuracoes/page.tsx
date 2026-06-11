@@ -219,7 +219,7 @@ function ModalEdicaoUsuario({
 
 // ── Seção: Usuários ────────────────────────────────────────────
 function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
-  const isAdmin = role === 'admin'
+  const isAdmin = role === 'admin' || role === 'gestor'
   const isAdminOuGestor = role === 'admin' || role === 'gestor'
 
   const [items, setItems] = useState<UsuarioItem[]>([])
@@ -775,7 +775,11 @@ export default function ConfiguracoesPage() {
     { id: 'centros', label: 'Centros de Custo',     desc: 'Unidades e filiais' },
   ]
 
-  const [aba, setAba] = useState<Aba>(isAdminOuGestor ? 'usuarios' : 'tipos')
+  const [aba, setAba] = useState<Aba>('usuarios')
+
+  useEffect(() => {
+    if (role && !isAdminOuGestor) setAba('tipos')
+  }, [role]) // eslint-disable-line
 
   if (!token || !role) return null
 
