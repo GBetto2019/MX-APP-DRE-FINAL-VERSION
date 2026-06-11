@@ -171,6 +171,7 @@ class UsuarioItem(RespostaBase):
     produtor_id: UUID | None
     ativo:       bool
     criado_em:   Any | None = None
+    permissions: Any | None = None
 
 
 class UsuarioCreate(RespostaBase):
@@ -180,6 +181,7 @@ class UsuarioCreate(RespostaBase):
     role:        str = "comercial"
     equipe_id:   UUID | None = None
     produtor_id: UUID | None = None
+    permissions: Any | None = None
 
     @field_validator("role")
     @classmethod
@@ -196,6 +198,7 @@ class UsuarioUpdate(RespostaBase):
     equipe_id:   UUID | None = None
     produtor_id: UUID | None = None
     ativo:       bool | None = None
+    permissions: Any | None = None
 
     @field_validator("role")
     @classmethod

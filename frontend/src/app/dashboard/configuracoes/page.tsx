@@ -4,10 +4,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUser } from '@/contexts/UserContext'
 import { api } from '@/lib/api'
 import { Badge } from '@/components/ui/Badge'
-import type { Role } from '@/types'
+import type { Role, Permissions } from '@/types'
+import { getDefaultPermissions } from '@/types'
 
 // ── Tipos locais ───────────────────────────────────────────────
-interface UsuarioItem { id: string; nome: string; email: string; role: Role; ativo: boolean }
+interface UsuarioItem { id: string; nome: string; email: string; role: Role; ativo: boolean; permissions?: Permissions | null }
 interface BancoItem   { id: string; nome: string; ativo: boolean }
 interface CentroItem  { id: string; nome: string; codigo: string; ativo: boolean }
 interface TipoItem    { id: string; nome: string; natureza: string; categoria: string | null; custo_tipo: string | null; ativo: boolean }
@@ -23,9 +24,6 @@ const ROLE_COLOR: Record<string, string> = {
   admin: 'bg-red-50 text-red-700', gestor: 'bg-amber-50 text-amber-700',
   contador: 'bg-blue-50 text-blue-700', comercial: 'bg-gray-100 text-gray-600',
 }
-const NAT_COLOR: Record<string, string> = {
-  despesa: 'bg-red-50 text-red-600', receita: 'bg-green-50 text-green-700',
-}
 
 function Chip({ label, cor }: { label: string; cor: string }) {
   return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${cor}`}>{label}</span>
@@ -33,8 +31,6 @@ function Chip({ label, cor }: { label: string; cor: string }) {
 function AtivoChip({ ativo }: { ativo: boolean }) {
   return <Chip label={ativo ? 'Ativo' : 'Inativo'} cor={ativo ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'} />
 }
-
-// ── Botão toggle ativo/inativo ─────────────────────────────────
 function BtnToggle({ ativo, onClick }: { ativo: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} className={`text-xs hover:underline ${ativo ? 'text-gray-400' : 'text-green-600'}`}>
@@ -43,12 +39,197 @@ function BtnToggle({ ativo, onClick }: { ativo: boolean; onClick: () => void }) 
   )
 }
 
+// ── Configuração de telas e ações para os checkboxes ──────────
+const TELAS_CONFIG: Array<{
+  id: keyof Permissions
+  label: string
+  acoes: Array<{ key: string; label: string }>
+}> = [
+  { id: 'visao_geral',   label: 'Visão Geral',   acoes: [{ key: 'visualizar', label: 'Ver' }] },
+  { id: 'dre',           label: 'DRE',            acoes: [{ key: 'visualizar', label: 'Ver' }] },
+  { id: 'lancamentos',   label: 'Lançamentos',    acoes: [
+    { key: 'visualizar', label: 'Ver' },
+    { key: 'criar',      label: 'Criar' },
+    { key: 'editar',     label: 'Editar' },
+    { key: 'deletar',    label: 'Deletar' },
+  ]},
+  { id: 'aprovacoes',    label: 'Aprovações',     acoes: [
+    { key: 'visualizar', label: 'Ver' },
+    { key: 'aprovar',    label: 'Aprovar' },
+  ]},
+  { id: 'assistente',    label: 'Assistente IA',  acoes: [{ key: 'visualizar', label: 'Ver' }] },
+  { id: 'configuracoes', label: 'Configurações',  acoes: [
+    { key: 'visualizar', label: 'Ver' },
+    { key: 'criar',      label: 'Criar' },
+    { key: 'editar',     label: 'Editar' },
+  ]},
+]
+
+// ── Componente de checkboxes de permissão ──────────────────────
+function PermissoesSelector({
+  permissions,
+  onChange,
+}: {
+  permissions: Permissions
+  onChange: (p: Permissions) => void
+}) {
+  function toggle(tela: keyof Permissions, acao: string) {
+    const current = (permissions[tela] as Record<string, boolean>)[acao] ?? false
+    onChange({
+      ...permissions,
+      [tela]: { ...permissions[tela], [acao]: !current },
+    })
+  }
+
+  return (
+    <div className="col-span-1 sm:col-span-2 lg:col-span-4 rounded-lg border border-gray-200 bg-white overflow-hidden">
+      <div className="border-b border-gray-100 px-3 py-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Permissões de Acesso</p>
+      </div>
+      <div className="divide-y divide-gray-50">
+        {TELAS_CONFIG.map(tela => (
+          <div key={tela.id} className="flex items-center gap-3 px-3 py-2">
+            <span className="w-28 shrink-0 text-xs font-medium text-gray-700">{tela.label}</span>
+            <div className="flex flex-wrap gap-3">
+              {tela.acoes.map(acao => {
+                const checked = (permissions[tela.id] as Record<string, boolean>)?.[acao.key] ?? false
+                return (
+                  <label key={acao.key} className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(tela.id, acao.key)}
+                      className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 text-[#071934] focus:ring-[#071934]"
+                    />
+                    <span className="text-xs text-gray-600">{acao.label}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Modal de edição de usuário ─────────────────────────────────
+function ModalEdicaoUsuario({
+  usuario,
+  token,
+  isAdmin,
+  onSalvo,
+  onFechar,
+}: {
+  usuario: UsuarioItem
+  token: string
+  isAdmin: boolean
+  onSalvo: () => void
+  onFechar: () => void
+}) {
+  const [form, setForm] = useState({
+    nome:        usuario.nome,
+    role:        usuario.role,
+    permissions: (usuario.permissions as Permissions) ?? getDefaultPermissions(usuario.role),
+  })
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault()
+    setSalvando(true); setErro(null)
+    try {
+      await api.patch(`/usuarios/${usuario.id}`, token, {
+        nome:        form.nome,
+        role:        form.role,
+        permissions: form.permissions,
+      })
+      onSalvo()
+    } catch (err) { setErro(err instanceof Error ? err.message : 'Erro ao salvar') }
+    finally { setSalvando(false) }
+  }
+
+  function handleRoleChange(newRole: Role) {
+    setForm(f => ({ ...f, role: newRole, permissions: getDefaultPermissions(newRole) }))
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <h2 className="text-sm font-semibold text-gray-800">Editar Usuário</h2>
+          <button onClick={onFechar} className="text-gray-400 hover:text-gray-600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={salvar} className="space-y-4 p-5">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">E-mail</label>
+            <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">{usuario.email}</p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">Nome</label>
+            <input
+              required
+              value={form.nome}
+              onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">Perfil</label>
+            <select value={form.role} onChange={e => handleRoleChange(e.target.value as Role)} className={selectCls}>
+              <option value="comercial">Comercial</option>
+              <option value="contador">Contador</option>
+              <option value="gestor">Gestor</option>
+              {isAdmin && <option value="admin">Admin</option>}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">Permissões de Acesso</label>
+            <PermissoesSelector
+              permissions={form.permissions}
+              onChange={p => setForm(f => ({ ...f, permissions: p }))}
+            />
+          </div>
+
+          {erro && <p className="text-xs text-red-600">{erro}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onFechar}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="submit" disabled={salvando}
+              className="rounded-lg bg-[#071934] px-5 py-2 text-sm font-medium text-white hover:bg-[#0E2444] disabled:opacity-50">
+              {salvando ? 'Salvando…' : 'Salvar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── Seção: Usuários ────────────────────────────────────────────
-function SecaoUsuarios({ token, isAdmin }: { token: string; isAdmin: boolean }) {
+function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
+  const isAdmin = role === 'admin'
+  const isAdminOuGestor = role === 'admin' || role === 'gestor'
+
   const [items, setItems] = useState<UsuarioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', role: 'comercial' as Role })
+  const [editandoUsuario, setEditandoUsuario] = useState<UsuarioItem | null>(null)
+  const [form, setForm] = useState({
+    nome: '', email: '', senha: '', role: 'comercial' as Role,
+    permissions: getDefaultPermissions('comercial'),
+  })
   const [erro, setErro] = useState<string | null>(null)
 
   const carregar = useCallback(() => {
@@ -64,8 +245,14 @@ function SecaoUsuarios({ token, isAdmin }: { token: string; isAdmin: boolean }) 
     e.preventDefault()
     setCriando(true); setErro(null)
     try {
-      await api.post('/usuarios', token, form)
-      setForm({ nome: '', email: '', senha: '', role: 'comercial' })
+      await api.post('/usuarios', token, {
+        nome:        form.nome,
+        email:       form.email,
+        senha:       form.senha,
+        role:        form.role,
+        permissions: form.permissions,
+      })
+      setForm({ nome: '', email: '', senha: '', role: 'comercial', permissions: getDefaultPermissions('comercial') })
       carregar()
     } catch (err) { setErro(err instanceof Error ? err.message : 'Erro ao criar') }
     finally { setCriando(false) }
@@ -77,78 +264,110 @@ function SecaoUsuarios({ token, isAdmin }: { token: string; isAdmin: boolean }) 
     carregar()
   }
 
+  function handleRoleChange(newRole: Role) {
+    setForm(f => ({ ...f, role: newRole, permissions: getDefaultPermissions(newRole) }))
+  }
+
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   return (
-    <div className="space-y-5">
-      {/* Formulário de criação */}
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Usuário</h3>
-        <form onSubmit={criar} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <input required value={form.nome} onChange={e => set('nome', e.target.value)}
-            placeholder="Nome completo" className={inputCls} />
-          <input required type="email" value={form.email} onChange={e => set('email', e.target.value)}
-            placeholder="E-mail" className={inputCls} />
-          <input required type="password" value={form.senha} onChange={e => set('senha', e.target.value)}
-            placeholder="Senha" className={inputCls} />
-          <select value={form.role} onChange={e => set('role', e.target.value)} className={selectCls}>
-            <option value="comercial">Comercial</option>
-            <option value="contador">Contador</option>
-            <option value="gestor">Gestor</option>
-            {isAdmin && <option value="admin">Admin</option>}
-          </select>
-          <div className="col-span-1 flex items-center gap-3 sm:col-span-2 lg:col-span-4">
-            {erro && <p className="text-xs text-red-600">{erro}</p>}
-            <button type="submit" disabled={criando}
-              className="ml-auto rounded-lg bg-[#071934] px-5 py-2 text-sm font-medium text-white hover:bg-[#0E2444] disabled:opacity-50">
-              {criando ? 'Criando…' : '+ Criar Usuário'}
-            </button>
-          </div>
-        </form>
-      </div>
+    <>
+      {editandoUsuario && (
+        <ModalEdicaoUsuario
+          usuario={editandoUsuario}
+          token={token}
+          isAdmin={isAdmin}
+          onSalvo={() => { setEditandoUsuario(null); carregar() }}
+          onFechar={() => setEditandoUsuario(null)}
+        />
+      )}
 
-      {/* Lista */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        {loading ? (
-          <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
-                <th className="px-4 py-3">Nome</th>
-                <th className="px-4 py-3">E-mail</th>
-                <th className="px-4 py-3">Perfil</th>
-                <th className="px-4 py-3">Status</th>
-                {isAdmin && <th className="px-4 py-3 text-right">Ação</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(u => (
-                <tr key={u.id} className="border-t border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-medium text-gray-800">{u.nome}</td>
-                  <td className="px-4 py-2.5 text-gray-500">{u.email}</td>
-                  <td className="px-4 py-2.5"><Chip label={ROLE_LABEL[u.role]} cor={ROLE_COLOR[u.role]} /></td>
-                  <td className="px-4 py-2.5"><AtivoChip ativo={u.ativo} /></td>
-                  {isAdmin && (
-                    <td className="px-4 py-2.5 text-right">
-                      <BtnToggle ativo={u.ativo} onClick={() => toggle(u)} />
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-sm text-gray-400">Nenhum usuário</td></tr>
-              )}
-            </tbody>
-          </table>
+      <div className="space-y-5">
+        {/* Formulário de criação (apenas admin/gestor) */}
+        {isAdminOuGestor && (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Usuário</h3>
+            <form onSubmit={criar} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <input required value={form.nome} onChange={e => set('nome', e.target.value)}
+                placeholder="Nome completo" className={inputCls} />
+              <input required type="email" value={form.email} onChange={e => set('email', e.target.value)}
+                placeholder="E-mail" className={inputCls} />
+              <input required type="password" value={form.senha} onChange={e => set('senha', e.target.value)}
+                placeholder="Senha" className={inputCls} />
+              <select value={form.role} onChange={e => handleRoleChange(e.target.value as Role)} className={selectCls}>
+                <option value="comercial">Comercial</option>
+                <option value="contador">Contador</option>
+                <option value="gestor">Gestor</option>
+                {isAdmin && <option value="admin">Admin</option>}
+              </select>
+
+              <PermissoesSelector
+                permissions={form.permissions}
+                onChange={p => setForm(f => ({ ...f, permissions: p }))}
+              />
+
+              <div className="col-span-1 flex items-center gap-3 sm:col-span-2 lg:col-span-4">
+                {erro && <p className="text-xs text-red-600">{erro}</p>}
+                <button type="submit" disabled={criando}
+                  className="ml-auto rounded-lg bg-[#071934] px-5 py-2 text-sm font-medium text-white hover:bg-[#0E2444] disabled:opacity-50">
+                  {criando ? 'Criando…' : '+ Criar Usuário'}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
+
+        {/* Lista */}
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          {loading ? (
+            <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
+                  <th className="px-4 py-3">Nome</th>
+                  <th className="px-4 py-3">E-mail</th>
+                  <th className="px-4 py-3">Perfil</th>
+                  <th className="px-4 py-3">Status</th>
+                  {isAdminOuGestor && <th className="px-4 py-3 text-right">Ações</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {items.map(u => (
+                  <tr key={u.id} className="border-t border-gray-50 hover:bg-gray-50">
+                    <td className="px-4 py-2.5 font-medium text-gray-800">{u.nome}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{u.email}</td>
+                    <td className="px-4 py-2.5"><Chip label={ROLE_LABEL[u.role]} cor={ROLE_COLOR[u.role]} /></td>
+                    <td className="px-4 py-2.5"><AtivoChip ativo={u.ativo} /></td>
+                    {isAdminOuGestor && (
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="inline-flex gap-3">
+                          <button onClick={() => setEditandoUsuario(u)}
+                            className="text-xs text-blue-500 hover:underline">
+                            Editar
+                          </button>
+                          {isAdmin && (
+                            <BtnToggle ativo={u.ativo} onClick={() => toggle(u)} />
+                          )}
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {items.length === 0 && (
+                  <tr><td colSpan={5} className="py-8 text-center text-sm text-gray-400">Nenhum usuário</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
 // ── Seção: Tipos de Lançamento ─────────────────────────────────
-function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
+function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar: boolean; podeEditar: boolean }) {
   const [items, setItems] = useState<TipoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
@@ -204,7 +423,7 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
 
   return (
     <div className="space-y-5">
-      {isAdmin && (
+      {podeCriar && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Tipo</h3>
           <form onSubmit={criar} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -232,7 +451,6 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
         </div>
       )}
 
-      {/* Tabelas por natureza */}
       {[{ label: 'Despesas', cor: 'text-red-600', lista: despesas }, { label: 'Receitas', cor: 'text-green-700', lista: receitas }].map(grupo => (
         <div key={grupo.label} className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <div className="border-b border-gray-100 px-4 py-2.5">
@@ -248,7 +466,7 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
                   <th className="px-4 py-2.5">Categoria</th>
                   <th className="px-4 py-2.5">Custo</th>
                   <th className="px-4 py-2.5">Status</th>
-                  {isAdmin && <th className="px-4 py-2.5 text-right">Ações</th>}
+                  {podeEditar && <th className="px-4 py-2.5 text-right">Ações</th>}
                 </tr>
               </thead>
               <tbody>
@@ -286,7 +504,7 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
                         <td className="px-4 py-2.5 text-gray-500">{t.categoria ?? '—'}</td>
                         <td className="px-4 py-2.5 capitalize text-gray-500">{t.custo_tipo ?? '—'}</td>
                         <td className="px-4 py-2.5"><AtivoChip ativo={t.ativo} /></td>
-                        {isAdmin && (
+                        {podeEditar && (
                           <td className="px-4 py-2.5 text-right">
                             <span className="inline-flex gap-3">
                               <button onClick={() => iniciarEdicao(t)} className="text-xs text-blue-500 hover:underline">Editar</button>
@@ -311,7 +529,7 @@ function SecaoTipos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
 }
 
 // ── Seção: Bancos ──────────────────────────────────────────────
-function SecaoBancos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
+function SecaoBancos({ token, podeCriar, podeEditar }: { token: string; podeCriar: boolean; podeEditar: boolean }) {
   const [items, setItems] = useState<BancoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
@@ -349,7 +567,7 @@ function SecaoBancos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
 
   return (
     <div className="space-y-5">
-      {isAdmin && (
+      {podeCriar && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Banco</h3>
           <form onSubmit={criar} className="flex flex-col gap-2 sm:flex-row sm:gap-3">
@@ -373,7 +591,7 @@ function SecaoBancos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
               <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Status</th>
-                {isAdmin && <th className="px-4 py-3 text-right">Ações</th>}
+                {podeEditar && <th className="px-4 py-3 text-right">Ações</th>}
               </tr>
             </thead>
             <tbody>
@@ -397,7 +615,7 @@ function SecaoBancos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
                     <>
                       <td className="px-4 py-2.5 font-medium text-gray-800">{b.nome}</td>
                       <td className="px-4 py-2.5"><AtivoChip ativo={b.ativo} /></td>
-                      {isAdmin && (
+                      {podeEditar && (
                         <td className="px-4 py-2.5 text-right">
                           <span className="inline-flex gap-3">
                             <button onClick={() => { setEditId(b.id); setEditNome(b.nome) }}
@@ -422,7 +640,7 @@ function SecaoBancos({ token, isAdmin }: { token: string; isAdmin: boolean }) {
 }
 
 // ── Seção: Centros de Custo ────────────────────────────────────
-function SecaoCentros({ token, isAdmin }: { token: string; isAdmin: boolean }) {
+function SecaoCentros({ token, podeCriar, podeEditar }: { token: string; podeCriar: boolean; podeEditar: boolean }) {
   const [items, setItems] = useState<CentroItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
@@ -462,7 +680,7 @@ function SecaoCentros({ token, isAdmin }: { token: string; isAdmin: boolean }) {
 
   return (
     <div className="space-y-5">
-      {isAdmin && (
+      {podeCriar && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Centro de Custo</h3>
           <form onSubmit={criar} className="flex flex-col gap-2 sm:flex-row sm:gap-3">
@@ -489,7 +707,7 @@ function SecaoCentros({ token, isAdmin }: { token: string; isAdmin: boolean }) {
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Código</th>
                 <th className="px-4 py-3">Status</th>
-                {isAdmin && <th className="px-4 py-3 text-right">Ações</th>}
+                {podeEditar && <th className="px-4 py-3 text-right">Ações</th>}
               </tr>
             </thead>
             <tbody>
@@ -515,7 +733,7 @@ function SecaoCentros({ token, isAdmin }: { token: string; isAdmin: boolean }) {
                       <td className="px-4 py-2.5 font-medium text-gray-800">{c.nome}</td>
                       <td className="px-4 py-2.5 text-gray-500">{c.codigo}</td>
                       <td className="px-4 py-2.5"><AtivoChip ativo={c.ativo} /></td>
-                      {isAdmin && (
+                      {podeEditar && (
                         <td className="px-4 py-2.5 text-right">
                           <span className="inline-flex gap-3">
                             <button onClick={() => { setEditId(c.id); setEditNome(c.nome) }}
@@ -540,26 +758,31 @@ function SecaoCentros({ token, isAdmin }: { token: string; isAdmin: boolean }) {
 }
 
 // ── Página principal ───────────────────────────────────────────
-const ABAS: { id: Aba; label: string; desc: string }[] = [
-  { id: 'usuarios', label: 'Usuários',             desc: 'Gerencie os acessos ao sistema' },
-  { id: 'tipos',    label: 'Tipos de Lançamento',  desc: 'Categorias de despesas e receitas' },
-  { id: 'bancos',   label: 'Bancos',               desc: 'Contas bancárias da corretora' },
-  { id: 'centros',  label: 'Centros de Custo',     desc: 'Unidades e filiais' },
-]
-
 export default function ConfiguracoesPage() {
   const { token } = useAuth()
-  const { role } = useUser()
-  const isAdmin = role === 'admin'
-  const [aba, setAba] = useState<Aba>('usuarios')
+  const { role, permissions } = useUser()
 
-  if (!token) return null
+  const isAdminOuGestor = role === 'admin' || role === 'gestor'
+  const podeCriar = permissions?.configuracoes?.criar ?? false
+  const podeEditar = permissions?.configuracoes?.editar ?? false
 
-  const abaAtual = ABAS.find(a => a.id === aba)!
+  // Abas visíveis: Usuários apenas para admin/gestor; demais para todos
+  type Aba = 'usuarios' | 'tipos' | 'bancos' | 'centros'
+  const ABAS: { id: Aba; label: string; desc: string }[] = [
+    ...(isAdminOuGestor ? [{ id: 'usuarios' as Aba, label: 'Usuários', desc: 'Gerencie os acessos ao sistema' }] : []),
+    { id: 'tipos',   label: 'Tipos de Lançamento',  desc: 'Categorias de despesas e receitas' },
+    { id: 'bancos',  label: 'Bancos',               desc: 'Contas bancárias da corretora' },
+    { id: 'centros', label: 'Centros de Custo',     desc: 'Unidades e filiais' },
+  ]
+
+  const [aba, setAba] = useState<Aba>(isAdminOuGestor ? 'usuarios' : 'tipos')
+
+  if (!token || !role) return null
+
+  const abaAtual = ABAS.find(a => a.id === aba) ?? ABAS[0]
 
   return (
     <div className="space-y-5">
-      {/* Cabeçalho */}
       <div>
         <h1 className="text-xl font-bold text-[#071934] md:text-2xl">Configurações</h1>
         <p className="mt-0.5 text-sm text-gray-500">Gerencie os parâmetros do sistema</p>
@@ -582,14 +805,12 @@ export default function ConfiguracoesPage() {
         ))}
       </div>
 
-      {/* Subtítulo da aba ativa */}
       <p className="text-xs text-gray-400">{abaAtual.desc}</p>
 
-      {/* Conteúdo da aba */}
-      {aba === 'usuarios' && <SecaoUsuarios token={token} isAdmin={isAdmin} />}
-      {aba === 'tipos'    && <SecaoTipos    token={token} isAdmin={isAdmin} />}
-      {aba === 'bancos'   && <SecaoBancos   token={token} isAdmin={isAdmin} />}
-      {aba === 'centros'  && <SecaoCentros  token={token} isAdmin={isAdmin} />}
+      {aba === 'usuarios' && isAdminOuGestor && <SecaoUsuarios token={token} role={role} />}
+      {aba === 'tipos'    && <SecaoTipos    token={token} podeCriar={podeCriar} podeEditar={podeEditar} />}
+      {aba === 'bancos'   && <SecaoBancos   token={token} podeCriar={podeCriar} podeEditar={podeEditar} />}
+      {aba === 'centros'  && <SecaoCentros  token={token} podeCriar={podeCriar} podeEditar={podeEditar} />}
     </div>
   )
 }

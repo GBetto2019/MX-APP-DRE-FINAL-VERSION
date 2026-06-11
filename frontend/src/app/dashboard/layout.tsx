@@ -7,7 +7,8 @@ import { api } from '@/lib/api'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { UserContext } from '@/contexts/UserContext'
-import type { Usuario } from '@/types'
+import type { Usuario, Permissions } from '@/types'
+import { getDefaultPermissions } from '@/types'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { session, loading, token, signOut } = useAuth()
@@ -47,15 +48,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  const role = usuario?.role ?? 'comercial'
+  const role = (usuario?.role ?? 'comercial') as import('@/types').Role
   const email = usuario?.email ?? session.user.email ?? ''
   const nome = usuario?.nome ?? ''
+  const permissions: Permissions = (usuario?.permissions as Permissions | null | undefined) ?? getDefaultPermissions(role)
 
   return (
-    <UserContext.Provider value={{ role: role as import('@/types').Role, nome, email }}>
+    <UserContext.Provider value={{ role, nome, email, permissions }}>
       <div className="flex h-screen overflow-hidden bg-[#F0F2F5]">
         <Sidebar
           role={role}
+          permissions={permissions}
           email={email}
           nome={nome}
           onSignOut={handleSignOut}

@@ -33,7 +33,7 @@ def _checar_escalada_de_privilegio(solicitante: UsuarioAtual, role_alvo: str | N
 async def listar_usuarios(db: Client) -> list[UsuarioItem]:
     resp = (
         db.table("usuarios")
-        .select("id, nome, email, role, equipe_id, produtor_id, ativo, criado_em")
+        .select("id, nome, email, role, equipe_id, produtor_id, ativo, criado_em, permissions")
         .order("nome")
         .execute()
     )
@@ -43,7 +43,7 @@ async def listar_usuarios(db: Client) -> list[UsuarioItem]:
 async def buscar_usuario(usuario_id: UUID, db: Client) -> UsuarioItem:
     resp = (
         db.table("usuarios")
-        .select("id, nome, email, role, equipe_id, produtor_id, ativo, criado_em")
+        .select("id, nome, email, role, equipe_id, produtor_id, ativo, criado_em, permissions")
         .eq("id", str(usuario_id))
         .single()
         .execute()
@@ -53,6 +53,30 @@ async def buscar_usuario(usuario_id: UUID, db: Client) -> UsuarioItem:
     return UsuarioItem(**resp.data)
 
 
+async def _buscar_user_id_no_auth(email: str) -> str | None:
+    """Busca o user_id no Supabase Auth por e-mail via GoTrue Admin API."""
+    from app.config import cfg
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{cfg.supabase_url}/auth/v1/admin/users",
+                headers={
+                    "Authorization": f"Bearer {cfg.supabase_service_role_key}",
+                    "apikey": cfg.supabase_service_role_key,
+                },
+                params={"per_page": 1000, "page": 1},
+            )
+            if resp.status_code == 200:
+                for u in resp.json().get("users", []):
+                    if u.get("email") == email:
+                        return u.get("id")
+    except Exception as e:
+        logger.warning("Falha ao buscar user no Auth por e-mail: %s", e)
+    return None
+
+
 async def criar_usuario(
     payload: UsuarioCreate,
     solicitante: UsuarioAtual,
@@ -60,7 +84,8 @@ async def criar_usuario(
 ) -> UsuarioItem:
     _checar_escalada_de_privilegio(solicitante, payload.role)
 
-    # 1. Cria no Supabase Auth
+    # 1. Cria no Supabase Auth — se já existe, recupera o user_id existente
+    user_id: str | None = None
     try:
         auth_resp = db_admin.auth.admin.create_user({
             "email":         payload.email,
@@ -69,19 +94,30 @@ async def criar_usuario(
         })
         user_id = auth_resp.user.id
     except Exception as exc:
-        logger.error("Falha ao criar usuário no Auth: %s", exc)
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail=f"Falha ao criar usuário no Auth: {exc}",
-        )
+        exc_str = str(exc).lower()
+        if "already been registered" in exc_str or "already registered" in exc_str:
+            user_id = await _buscar_user_id_no_auth(payload.email)
+            if not user_id:
+                raise HTTPException(
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    detail="E-mail já cadastrado. Não foi possível localizar o usuário existente.",
+                )
+        else:
+            logger.error("Falha ao criar usuário no Auth: %s", exc)
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail=f"Falha ao criar usuário no Auth: {exc}",
+            )
 
-    # 2. Insere perfil na tabela usuarios (com rollback em caso de falha)
+    # 2. Upsert perfil na tabela usuarios (insert ou atualiza se já existir)
+    from app.permissions import resolver_permissions
     dados: dict = {
-        "id":    user_id,
-        "nome":  payload.nome,
-        "email": payload.email,
-        "role":  payload.role,
-        "ativo": True,
+        "id":          user_id,
+        "nome":        payload.nome,
+        "email":       payload.email,
+        "role":        payload.role,
+        "ativo":       True,
+        "permissions": resolver_permissions(payload.role, payload.permissions),
     }
     if payload.equipe_id:
         dados["equipe_id"] = str(payload.equipe_id)
@@ -89,14 +125,10 @@ async def criar_usuario(
         dados["produtor_id"] = str(payload.produtor_id)
 
     try:
-        resp = db_admin.table("usuarios").insert(dados).execute()
+        resp = db_admin.table("usuarios").upsert(dados, on_conflict="id").execute()
         return UsuarioItem(**resp.data[0])
     except Exception as exc:
-        logger.error("Falha ao inserir perfil — revertendo Auth user %s: %s", user_id, exc)
-        try:
-            db_admin.auth.admin.delete_user(user_id)
-        except Exception as rb_exc:
-            logger.error("Falha no rollback do Auth user %s: %s", user_id, rb_exc)
+        logger.error("Falha ao fazer upsert do perfil %s: %s", user_id, exc)
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Falha ao criar perfil do usuário: {exc}",
@@ -112,6 +144,12 @@ async def atualizar_usuario(
     _checar_escalada_de_privilegio(solicitante, payload.role)
 
     dados = {k: v for k, v in payload.model_dump().items() if k in payload.model_fields_set}
+
+    # Se a role foi alterada e permissions não foi enviado, recalcula o default da nova role
+    if "role" in dados and "permissions" not in dados:
+        from app.permissions import get_default_permissions
+        dados["permissions"] = get_default_permissions(dados["role"])
+
     if not dados:
         raise HTTPException(
             status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,

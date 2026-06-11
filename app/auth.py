@@ -18,9 +18,9 @@ from pydantic import BaseModel
 
 from app.config import cfg
 
-# Cache em memória: {user_id: (role, tenant_id|None, equipe_id|None, produtor_id|None, timestamp)}
+# Cache em memória: {user_id: (role, tenant_id|None, equipe_id|None, produtor_id|None, permissions, timestamp)}
 # TTL de 60s — esses campos raramente mudam.
-_role_cache: dict[str, tuple[str, str | None, str | None, str | None, float]] = {}
+_role_cache: dict[str, tuple[str, str | None, str | None, str | None, dict, float]] = {}
 _ROLE_TTL = 60.0
 
 BEARER = HTTPBearer()
@@ -36,6 +36,7 @@ class UsuarioAtual(BaseModel):
     tenant_id:   str | None = None   # Sprint 4: multi-tenant
     equipe_id:   str | None = None
     produtor_id: str | None = None
+    permissions: dict = {}
 
 
 async def obter_usuario_atual(
@@ -65,7 +66,7 @@ async def obter_usuario_atual(
             detail="Usuário não autenticado.",
         )
 
-    role, tenant_id, equipe_id, produtor_id = await _buscar_perfil_no_banco(user.id)
+    role, tenant_id, equipe_id, produtor_id, permissions = await _buscar_perfil_no_banco(user.id)
 
     return UsuarioAtual(
         user_id=user.id,
@@ -74,26 +75,29 @@ async def obter_usuario_atual(
         tenant_id=tenant_id,
         equipe_id=equipe_id,
         produtor_id=produtor_id,
+        permissions=permissions,
     )
 
 
-async def _buscar_perfil_no_banco(user_id: str) -> tuple[str, str | None, str | None, str | None]:
+async def _buscar_perfil_no_banco(user_id: str) -> tuple[str, str | None, str | None, str | None, dict]:
     """
-    Busca role, tenant_id, equipe_id e produtor_id do usuário, com cache TTL=60s.
+    Busca role, tenant_id, equipe_id, produtor_id e permissions do usuário, com cache TTL=60s.
     Source of truth para permissões — nunca confia no JWT.
     Graceful: se coluna tenant_id não existir ainda (migration pendente), retorna None.
     """
+    from app.permissions import resolver_permissions, get_default_permissions
+
     now = _time.monotonic()
     cached = _role_cache.get(user_id)
-    if cached and now - cached[4] < _ROLE_TTL:
-        return cached[0], cached[1], cached[2], cached[3]
+    if cached and now - cached[5] < _ROLE_TTL:
+        return cached[0], cached[1], cached[2], cached[3], cached[4]
 
     from supabase import create_client
     admin = create_client(cfg.supabase_url, cfg.supabase_service_role_key)
     try:
-        # Tenta buscar com tenant_id (Sprint 4)
+        # Tenta buscar com tenant_id e permissions (migrations mais recentes)
         resp = admin.table("usuarios") \
-            .select("role, tenant_id, equipe_id, produtor_id") \
+            .select("role, tenant_id, equipe_id, produtor_id, permissions") \
             .eq("id", user_id) \
             .limit(1) \
             .execute()
@@ -103,12 +107,13 @@ async def _buscar_perfil_no_banco(user_id: str) -> tuple[str, str | None, str | 
             tenant_id = row.get("tenant_id")
             equipe_id = row.get("equipe_id")
             produtor_id = row.get("produtor_id")
-            _role_cache[user_id] = (role, tenant_id, equipe_id, produtor_id, now)
-            return role, tenant_id, equipe_id, produtor_id
+            permissions = resolver_permissions(role, row.get("permissions"))
+            _role_cache[user_id] = (role, tenant_id, equipe_id, produtor_id, permissions, now)
+            return role, tenant_id, equipe_id, produtor_id, permissions
     except Exception as e:
-        # Fallback: coluna tenant_id pode não existir ainda (migration pendente)
         err = str(e)
-        if "schema cache" in err or "tenant_id" in err:
+        # Fallback: coluna tenant_id ou permissions pode não existir ainda (migration pendente)
+        if "schema cache" in err or "tenant_id" in err or "permissions" in err:
             try:
                 resp = admin.table("usuarios") \
                     .select("role, equipe_id, produtor_id") \
@@ -120,8 +125,9 @@ async def _buscar_perfil_no_banco(user_id: str) -> tuple[str, str | None, str | 
                     role = row["role"]
                     equipe_id = row.get("equipe_id")
                     produtor_id = row.get("produtor_id")
-                    _role_cache[user_id] = (role, None, equipe_id, produtor_id, now)
-                    return role, None, equipe_id, produtor_id
+                    permissions = get_default_permissions(role)
+                    _role_cache[user_id] = (role, None, equipe_id, produtor_id, permissions, now)
+                    return role, None, equipe_id, produtor_id, permissions
             except Exception:
                 pass
 
@@ -133,7 +139,7 @@ async def _buscar_perfil_no_banco(user_id: str) -> tuple[str, str | None, str | 
 
 # Manter compatibilidade com código existente
 async def _buscar_role_no_banco(user_id: str) -> str:
-    role, _, _, _ = await _buscar_perfil_no_banco(user_id)
+    role, _, _, _, _ = await _buscar_perfil_no_banco(user_id)
     return role
 
 

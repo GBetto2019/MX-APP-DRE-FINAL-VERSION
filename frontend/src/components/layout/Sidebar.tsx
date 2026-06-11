@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import type { Role } from '@/types'
+import type { Role, Permissions } from '@/types'
 import Image from 'next/image'
 
 const Icon = {
@@ -17,24 +17,27 @@ const Icon = {
   users:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
 }
 
-interface NavItem { href: string; label: string; icon: React.ReactNode; roles?: Role[] }
+type PermissaoTela = keyof Permissions
+
+interface NavItem { href: string; label: string; icon: React.ReactNode; permissaoTela?: PermissaoTela }
 
 const NAV: NavItem[] = [
-  { href: '/dashboard',                        label: 'Visão Geral',   icon: Icon.grid     },
-  { href: '/dashboard/dre',                    label: 'DRE',           icon: Icon.chart    },
-  { href: '/dashboard/lancamentos',            label: 'Lançamentos',   icon: Icon.book     },
-  { href: '/dashboard/lancamentos/aprovacoes', label: 'Aprovações',    icon: Icon.kanban,  roles: ['admin', 'gestor'] },
-  { href: '/dashboard/exports',                label: 'Exportações',   icon: Icon.download },
-  { href: '/dashboard/assistente',             label: 'Assistente IA', icon: Icon.chat     },
+  { href: '/dashboard',                        label: 'Visão Geral',   icon: Icon.grid,     permissaoTela: 'visao_geral'  },
+  { href: '/dashboard/dre',                    label: 'DRE',           icon: Icon.chart,    permissaoTela: 'dre'          },
+  { href: '/dashboard/lancamentos',            label: 'Lançamentos',   icon: Icon.book,     permissaoTela: 'lancamentos'  },
+  { href: '/dashboard/lancamentos/aprovacoes', label: 'Aprovações',    icon: Icon.kanban,   permissaoTela: 'aprovacoes'   },
+  { href: '/dashboard/exports',                label: 'Exportações',   icon: Icon.download                                },
+  { href: '/dashboard/assistente',             label: 'Assistente IA', icon: Icon.chat,     permissaoTela: 'assistente'   },
 ]
 
 const NAV_BOTTOM: NavItem[] = [
-  { href: '/dashboard/ajuda',         label: 'FAQ',           icon: Icon.faq                              },
-  { href: '/dashboard/configuracoes', label: 'Configurações', icon: Icon.gear, roles: ['admin', 'gestor'] },
+  { href: '/dashboard/ajuda',         label: 'FAQ',           icon: Icon.faq                                            },
+  { href: '/dashboard/configuracoes', label: 'Configurações', icon: Icon.gear, permissaoTela: 'configuracoes'           },
 ]
 
 interface Props {
   role: Role
+  permissions: Permissions
   email: string
   nome: string
   onSignOut: () => void
@@ -42,7 +45,7 @@ interface Props {
   onFechar?: () => void
 }
 
-export function Sidebar({ role, email, nome, onSignOut, aberta = false, onFechar }: Props) {
+export function Sidebar({ role, permissions, email, nome, onSignOut, aberta = false, onFechar }: Props) {
   const pathname = usePathname()
 
   const allNav = [...NAV, ...NAV_BOTTOM]
@@ -50,13 +53,15 @@ export function Sidebar({ role, email, nome, onSignOut, aberta = false, onFechar
     if (href === '/dashboard') return pathname === '/dashboard'
     if (pathname === href) return true
     if (pathname.startsWith(href + '/')) {
-      // Ativo apenas se nenhum item mais específico também corresponder
       return !allNav.some(n => n.href !== href && n.href.startsWith(href + '/') && pathname.startsWith(n.href))
     }
     return false
   }
 
-  const visible = (item: NavItem) => !item.roles || item.roles.includes(role)
+  const visible = (item: NavItem) => {
+    if (!item.permissaoTela) return true
+    return permissions[item.permissaoTela]?.visualizar === true
+  }
 
   const navItemCls = (active: boolean) => cn(
     'flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors',

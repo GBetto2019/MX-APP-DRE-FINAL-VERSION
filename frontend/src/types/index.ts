@@ -1,5 +1,53 @@
 export type Role = 'admin' | 'gestor' | 'comercial' | 'contador'
 
+export interface Permissions {
+  visao_geral:   { visualizar: boolean }
+  dre:           { visualizar: boolean }
+  lancamentos:   { visualizar: boolean; criar: boolean; editar: boolean; deletar: boolean }
+  aprovacoes:    { visualizar: boolean; aprovar: boolean }
+  assistente:    { visualizar: boolean }
+  configuracoes: { visualizar: boolean; criar: boolean; editar: boolean }
+}
+
+export const DEFAULT_PERMISSIONS: Record<Role, Permissions> = {
+  admin: {
+    visao_geral:   { visualizar: true },
+    dre:           { visualizar: true },
+    lancamentos:   { visualizar: true, criar: true, editar: true, deletar: true },
+    aprovacoes:    { visualizar: true, aprovar: true },
+    assistente:    { visualizar: true },
+    configuracoes: { visualizar: true, criar: true, editar: true },
+  },
+  gestor: {
+    visao_geral:   { visualizar: true },
+    dre:           { visualizar: true },
+    lancamentos:   { visualizar: true, criar: true, editar: true, deletar: false },
+    aprovacoes:    { visualizar: true, aprovar: true },
+    assistente:    { visualizar: true },
+    configuracoes: { visualizar: true, criar: true, editar: true },
+  },
+  comercial: {
+    visao_geral:   { visualizar: true },
+    dre:           { visualizar: true },
+    lancamentos:   { visualizar: true, criar: true, editar: false, deletar: false },
+    aprovacoes:    { visualizar: false, aprovar: false },
+    assistente:    { visualizar: true },
+    configuracoes: { visualizar: true, criar: false, editar: false },
+  },
+  contador: {
+    visao_geral:   { visualizar: true },
+    dre:           { visualizar: true },
+    lancamentos:   { visualizar: true, criar: true, editar: false, deletar: false },
+    aprovacoes:    { visualizar: false, aprovar: false },
+    assistente:    { visualizar: true },
+    configuracoes: { visualizar: true, criar: false, editar: false },
+  },
+}
+
+export function getDefaultPermissions(role: Role): Permissions {
+  return DEFAULT_PERMISSIONS[role]
+}
+
 export interface Usuario {
   id: string
   nome: string
@@ -8,6 +56,7 @@ export interface Usuario {
   equipe_id: string | null
   produtor_id: string | null
   ativo: boolean
+  permissions?: Permissions | null
 }
 
 export interface LinhasDRE {
@@ -56,6 +105,7 @@ export interface UsuarioItem {
   equipe_id: string | null
   produtor_id: string | null
   ativo: boolean
+  permissions?: Permissions | null
 }
 
 export type StatusDespesa = 'pendente' | 'aprovada' | 'rejeitada'
