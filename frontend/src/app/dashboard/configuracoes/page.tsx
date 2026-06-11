@@ -821,17 +821,13 @@ export default function ConfiguracoesPage() {
   const podeExcluir = permissions?.configuracoes?.deletar  ?? false
 
   const ABAS: { id: Aba; label: string; desc: string }[] = [
-    ...(isAdminOuGestor ? [{ id: 'usuarios' as Aba, label: 'Usuários', desc: 'Gerencie os acessos ao sistema' }] : []),
-    { id: 'tipos',   label: 'Tipos de Lançamento', desc: 'Categorias de despesas e receitas' },
-    { id: 'bancos',  label: 'Bancos',              desc: 'Contas bancárias da corretora' },
-    { id: 'centros', label: 'Centros de Custo',    desc: 'Unidades e filiais' },
+    { id: 'usuarios', label: 'Usuários',            desc: 'Gerencie os acessos ao sistema' },
+    { id: 'tipos',    label: 'Tipos de Lançamento', desc: 'Categorias de despesas e receitas' },
+    { id: 'bancos',   label: 'Bancos',              desc: 'Contas bancárias da corretora' },
+    { id: 'centros',  label: 'Centros de Custo',    desc: 'Unidades e filiais' },
   ]
 
-  // Aba Usuários sempre ativa ao entrar; troca para tipos se não for admin/gestor
   const [aba, setAba] = useState<Aba>('usuarios')
-  useEffect(() => {
-    if (role && !isAdminOuGestor) setAba('tipos')
-  }, [role]) // eslint-disable-line
 
   if (!token || !role) return null
 
@@ -858,7 +854,7 @@ export default function ConfiguracoesPage() {
 
       <p className="text-xs text-gray-400">{abaAtual.desc}</p>
 
-      {aba === 'usuarios' && isAdminOuGestor && (
+      {aba === 'usuarios' && (
         <SecaoUsuarios token={token} role={role} podeExcluir={podeExcluir} />
       )}
       {aba === 'tipos' && (
