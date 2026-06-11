@@ -39,9 +39,7 @@ async def listar_usuarios(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin_ou_gestor(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
-    items = await usuario_service.listar_usuarios(db)
+    items = await usuario_service.listar_usuarios(get_supabase_admin())
     return {"total": len(items), "items": [i.model_dump() for i in items]}
 
 

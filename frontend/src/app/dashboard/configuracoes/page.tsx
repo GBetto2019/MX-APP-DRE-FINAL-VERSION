@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useUser } from '@/contexts/UserContext'
 import { api } from '@/lib/api'
@@ -203,7 +204,13 @@ function ModalEdicaoUsuario({
 }
 
 // ── Seção: Usuários ────────────────────────────────────────────
-function SecaoUsuarios({ token, role, podeExcluir }: { token: string; role: Role; podeExcluir: boolean }) {
+function SecaoUsuarios({
+  token, role, podeExcluir, currentUserId, onSelfDeleted,
+}: {
+  token: string; role: Role; podeExcluir: boolean
+  currentUserId: string | null
+  onSelfDeleted: () => void
+}) {
   const isAdminOuGestor = role === 'admin' || role === 'gestor'
 
   const [items, setItems] = useState<UsuarioItem[]>([])
@@ -243,7 +250,11 @@ function SecaoUsuarios({ token, role, podeExcluir }: { token: string; role: Role
   async function excluir(u: UsuarioItem) {
     await api.delete(`/usuarios/${u.id}`, token)
     setConfirmExcluir(null)
-    carregar()
+    if (u.id === currentUserId) {
+      onSelfDeleted()
+    } else {
+      carregar()
+    }
   }
 
   function handleRoleChange(newRole: Role) {
@@ -251,6 +262,8 @@ function SecaoUsuarios({ token, role, podeExcluir }: { token: string; role: Role
   }
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  const isSelf = (u: UsuarioItem) => u.id === currentUserId
 
   return (
     <>
@@ -266,10 +279,28 @@ function SecaoUsuarios({ token, role, podeExcluir }: { token: string; role: Role
       {confirmExcluir && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-sm font-semibold text-gray-800">Excluir usuário?</h3>
-            <p className="mb-5 text-sm text-gray-500">
-              <strong>{confirmExcluir.nome}</strong> será excluído permanentemente e não poderá mais acessar o sistema.
-            </p>
+            {isSelf(confirmExcluir) ? (
+              <>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                      <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                  </span>
+                  <h3 className="text-sm font-semibold text-gray-800">Atenção</h3>
+                </div>
+                <p className="mb-5 text-sm text-gray-600">
+                  Este é seu usuário atual, ao excluí-lo você perderá acesso ao sistema.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="mb-2 text-sm font-semibold text-gray-800">Excluir usuário?</h3>
+                <p className="mb-5 text-sm text-gray-500">
+                  <strong>{confirmExcluir.nome}</strong> será excluído permanentemente e não poderá mais acessar o sistema.
+                </p>
+              </>
+            )}
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmExcluir(null)}
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
@@ -277,7 +308,7 @@ function SecaoUsuarios({ token, role, podeExcluir }: { token: string; role: Role
               </button>
               <button onClick={() => excluir(confirmExcluir)}
                 className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700">
-                Excluir
+                {isSelf(confirmExcluir) ? 'Excluir e sair' : 'Excluir'}
               </button>
             </div>
           </div>
@@ -812,13 +843,16 @@ function SecaoCentros({ token, podeCriar, podeEditar, podeExcluir }: {
 
 // ── Página principal ───────────────────────────────────────────
 export default function ConfiguracoesPage() {
-  const { token } = useAuth()
+  const { token, session, signOut } = useAuth()
   const { role, permissions } = useUser()
+  const router = useRouter()
 
   const isAdminOuGestor = role === 'admin' || role === 'gestor'
   const podeCriar   = permissions?.configuracoes?.criar    ?? false
   const podeEditar  = permissions?.configuracoes?.editar   ?? false
   const podeExcluir = permissions?.configuracoes?.deletar  ?? false
+
+  const currentUserId = session?.user?.id ?? null
 
   const ABAS: { id: Aba; label: string; desc: string }[] = [
     { id: 'usuarios', label: 'Usuários',            desc: 'Gerencie os acessos ao sistema' },
@@ -828,6 +862,11 @@ export default function ConfiguracoesPage() {
   ]
 
   const [aba, setAba] = useState<Aba>('usuarios')
+
+  async function handleSelfDeleted() {
+    await signOut()
+    router.push('/login')
+  }
 
   if (!token || !role) return null
 
@@ -855,7 +894,10 @@ export default function ConfiguracoesPage() {
       <p className="text-xs text-gray-400">{abaAtual.desc}</p>
 
       {aba === 'usuarios' && (
-        <SecaoUsuarios token={token} role={role} podeExcluir={podeExcluir} />
+        <SecaoUsuarios
+          token={token} role={role} podeExcluir={podeExcluir}
+          currentUserId={currentUserId} onSelfDeleted={handleSelfDeleted}
+        />
       )}
       {aba === 'tipos' && (
         <SecaoTipos token={token} podeCriar={podeCriar} podeEditar={podeEditar} podeExcluir={podeExcluir} />

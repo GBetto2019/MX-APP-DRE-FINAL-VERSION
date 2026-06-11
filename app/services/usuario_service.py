@@ -157,12 +157,6 @@ async def excluir_usuario(
     solicitante_id: str,
     db_admin: Client,
 ) -> None:
-    if str(usuario_id) == solicitante_id:
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível excluir a própria conta.",
-        )
-
     resp = db_admin.table("usuarios").delete().eq("id", str(usuario_id)).execute()
     if not resp.data:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
