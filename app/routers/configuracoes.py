@@ -65,8 +65,7 @@ async def criar_banco(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
+    db = get_supabase_admin()
     item = await financeiro_service.criar_banco(payload, db)
     await registrar_auditoria(
         usuario, "criar_banco", {"nome": payload.nome},
@@ -88,9 +87,7 @@ async def atualizar_banco(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
-    return await financeiro_service.atualizar_banco(banco_id, payload, db)
+    return await financeiro_service.atualizar_banco(banco_id, payload, get_supabase_admin())
 
 
 # ── CENTROS DE CUSTO ──────────────────────────────────────────
@@ -121,8 +118,7 @@ async def criar_centro(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
+    db = get_supabase_admin()
     item = await financeiro_service.criar_centro_custo(payload, db)
     await registrar_auditoria(
         usuario, "criar_centro_custo", {"nome": payload.nome, "codigo": payload.codigo},
@@ -144,9 +140,7 @@ async def atualizar_centro(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
-    return await financeiro_service.atualizar_centro_custo(centro_id, payload, db)
+    return await financeiro_service.atualizar_centro_custo(centro_id, payload, get_supabase_admin())
 
 
 # ── TIPOS DE LANÇAMENTO ───────────────────────────────────────
@@ -183,8 +177,7 @@ async def criar_tipo(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="'natureza' deve ser 'despesa' ou 'receita'.",
         )
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
+    db = get_supabase_admin()
     item = await financeiro_service.criar_tipo_lancamento(payload, db)
     await registrar_auditoria(
         usuario, "criar_tipo_lancamento", {"nome": payload.nome},
@@ -206,9 +199,7 @@ async def atualizar_tipo(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
-    return await financeiro_service.atualizar_tipo_lancamento(tipo_id, payload, db)
+    return await financeiro_service.atualizar_tipo_lancamento(tipo_id, payload, get_supabase_admin())
 
 
 @router.delete(
@@ -222,6 +213,4 @@ async def desativar_tipo(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
-    await financeiro_service.desativar_tipo_lancamento(tipo_id, db)
+    await financeiro_service.desativar_tipo_lancamento(tipo_id, get_supabase_admin())
