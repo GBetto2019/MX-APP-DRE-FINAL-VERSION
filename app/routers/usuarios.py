@@ -80,9 +80,7 @@ async def atualizar_usuario(
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin_ou_gestor(usuario)
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
-    atualizado = await usuario_service.atualizar_usuario(usuario_id, payload, usuario, db)
+    atualizado = await usuario_service.atualizar_usuario(usuario_id, payload, usuario, get_supabase_admin())
     await registrar_auditoria(
         usuario, "atualizar_usuario",
         {"usuario_id": str(usuario_id), **payload.model_dump(exclude_none=True)},
@@ -104,10 +102,8 @@ async def desativar_usuario(
 ):
     if usuario.role not in ("admin", "gestor"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas Admin ou Gestor pode desativar usuários.")
-    token = request.headers.get("authorization", "").replace("Bearer ", "")
-    db = get_supabase_usuario(token)
     db_admin = get_supabase_admin()
-    await usuario_service.desativar_usuario(usuario_id, usuario.user_id, db, db_admin)
+    await usuario_service.desativar_usuario(usuario_id, usuario.user_id, db_admin, db_admin)
     await registrar_auditoria(
         usuario, "desativar_usuario", {"usuario_id": str(usuario_id)},
         request.client.host if request.client else None,

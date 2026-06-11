@@ -11,7 +11,7 @@ from app.config import cfg
 
 router = APIRouter(tags=["Sistema"])
 
-_APP_VERSION = "1.2.2"
+_APP_VERSION = "1.2.3"
 _startup_time = _time.monotonic()
 
 
