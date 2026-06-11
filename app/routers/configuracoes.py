@@ -26,10 +26,10 @@ router = APIRouter(prefix="/configuracoes", tags=["Configurações"])
 
 
 def _exigir_admin(usuario: UsuarioAtual) -> None:
-    if usuario.role != "admin":
+    if usuario.role not in ("admin", "gestor"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas Admin pode alterar configurações.",
+            detail="Apenas Admin ou Gestor pode alterar configurações.",
         )
 
 

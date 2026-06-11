@@ -41,17 +41,18 @@ def _montar_dre_response(dados: dict, usuario: UsuarioAtual) -> DREResponse:
         val = dados.get(chave)
         return Decimal(str(val)) if val is not None else None
 
+    _somente_comercial = usuario.role == "comercial"
     dre = LinhasDRE(
         receita_bruta             = _decimal("receita_bruta")    or Decimal(0),
         estornos                  = _decimal("estornos")         or Decimal(0),
         impostos                  = _decimal("impostos")         or Decimal(0),
-        receita_liquida           = None if usuario.role == "comercial"              else _decimal("receita_liquida"),
+        receita_liquida           = None if _somente_comercial else _decimal("receita_liquida"),
         repasses_produtores       = _decimal("repasses_produtores"),
-        margem_contribuicao       = None if usuario.role == "comercial"              else _decimal("margem_contribuicao"),
-        despesas_fixas            = None if usuario.role in ("gestor", "comercial")  else _decimal("despesas_fixas"),
-        ebitda                    = None if usuario.role in ("gestor", "comercial")  else _decimal("ebitda"),
-        despesas_nao_operacionais = None if usuario.role in ("gestor", "comercial")  else _decimal("despesas_nao_operacionais"),
-        resultado_liquido         = None if usuario.role in ("gestor", "comercial")  else _decimal("resultado_liquido"),
+        margem_contribuicao       = None if _somente_comercial else _decimal("margem_contribuicao"),
+        despesas_fixas            = None if _somente_comercial else _decimal("despesas_fixas"),
+        ebitda                    = None if _somente_comercial else _decimal("ebitda"),
+        despesas_nao_operacionais = None if _somente_comercial else _decimal("despesas_nao_operacionais"),
+        resultado_liquido         = None if _somente_comercial else _decimal("resultado_liquido"),
     )
     return DREResponse(periodo=periodo, dre=dre, perfil=usuario.role)
 

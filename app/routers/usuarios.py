@@ -102,8 +102,8 @@ async def desativar_usuario(
     usuario_id: UUID,
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
-    if usuario.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas Admin pode desativar usuários.")
+    if usuario.role not in ("admin", "gestor"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas Admin ou Gestor pode desativar usuários.")
     token = request.headers.get("authorization", "").replace("Bearer ", "")
     db = get_supabase_usuario(token)
     db_admin = get_supabase_admin()

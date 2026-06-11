@@ -20,18 +20,18 @@ router = APIRouter(prefix="/fechamentos", tags=["Fechamentos"])
 
 
 def _exigir_fechamento(usuario: UsuarioAtual) -> None:
-    if usuario.role not in ("admin", "contador"):
+    if usuario.role not in ("admin", "gestor", "contador"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Fechamentos disponíveis apenas para Admin e Contador.",
+            detail="Fechamentos disponíveis apenas para Admin, Gestor e Contador.",
         )
 
 
-def _exigir_admin(usuario: UsuarioAtual) -> None:
-    if usuario.role != "admin":
+def _exigir_admin_ou_gestor(usuario: UsuarioAtual) -> None:
+    if usuario.role not in ("admin", "gestor"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas Admin pode reabrir fechamentos.",
+            detail="Apenas Admin ou Gestor podem reabrir fechamentos.",
         )
 
 
@@ -92,7 +92,7 @@ async def reabrir_fechamento(
     Reabre um fechamento ativo. O registro histórico é mantido.
     Um novo fechamento pode ser criado para o mesmo mês após a reabertura.
     """
-    _exigir_admin(usuario)
+    _exigir_admin_ou_gestor(usuario)
     if not payload.motivo or not payload.motivo.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

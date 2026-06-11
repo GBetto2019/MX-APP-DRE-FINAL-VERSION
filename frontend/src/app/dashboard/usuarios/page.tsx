@@ -17,7 +17,7 @@ const ROLE_VARIANT: Record<Role, 'info' | 'warning' | 'success' | 'default'> = {
 export default function UsuariosPage() {
   const { token } = useAuth()
   const { role: myRole } = useUser()
-  const isAdmin = myRole === 'admin'
+  const isAdmin = myRole === 'admin' || myRole === 'gestor'
   const [usuarios, setUsuarios] = useState<UsuarioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState<string | null>(null)

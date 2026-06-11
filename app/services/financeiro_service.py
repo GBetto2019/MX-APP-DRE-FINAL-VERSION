@@ -231,8 +231,8 @@ async def criar_despesa(
         if resp_tipo.data:
             categoria = resp_tipo.data.get("categoria")
 
-    # admin e contador auto-aprovam; gestor e comercial ficam pendentes (Task 2.5)
-    status_inicial = "aprovada" if usuario.role in ("admin", "contador") else "pendente"
+    # admin e gestor auto-aprovam; contador e comercial ficam pendentes
+    status_inicial = "aprovada" if usuario.role in ("admin", "gestor") else "pendente"
 
     dados = {
         "subcategoria":  payload.subcategoria,

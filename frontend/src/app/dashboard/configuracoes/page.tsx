@@ -259,7 +259,7 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
   }
 
   async function toggle(u: UsuarioItem) {
-    if (!isAdmin) return
+    if (!isAdminOuGestor) return
     await api.patch(`/usuarios/${u.id}`, token, { ativo: !u.ativo })
     carregar()
   }
@@ -346,7 +346,7 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
                             className="text-xs text-blue-500 hover:underline">
                             Editar
                           </button>
-                          {isAdmin && (
+                          {isAdminOuGestor && (
                             <BtnToggle ativo={u.ativo} onClick={() => toggle(u)} />
                           )}
                         </span>

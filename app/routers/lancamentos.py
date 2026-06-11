@@ -38,20 +38,19 @@ def _exigir_leitura(usuario: UsuarioAtual) -> None:
 
 
 def _exigir_despesas_leitura(usuario: UsuarioAtual) -> None:
-    """Leitura de despesas restrita a Admin e Contador (RLS Task 2.2)."""
-    if usuario.role not in ("admin", "contador"):
+    if usuario.role not in ("admin", "gestor", "contador"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso às despesas restrito a Admin e Contador.",
+            detail="Acesso às despesas restrito a Admin, Gestor e Contador.",
         )
 
 
-def _exigir_admin(usuario: UsuarioAtual) -> None:
-    """Remoção de despesas restrita a Admin."""
-    if usuario.role != "admin":
+def _exigir_admin_ou_gestor(usuario: UsuarioAtual) -> None:
+    """Remoção de despesas restrita a Admin e Gestor."""
+    if usuario.role not in ("admin", "gestor"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas Admin pode remover despesas.",
+            detail="Apenas Admin e Gestor podem remover despesas.",
         )
 
 
@@ -163,7 +162,7 @@ async def deletar_despesa(
     excluir_futuras: bool = Query(False, description="Excluir também parcelas futuras do mesmo grupo"),
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
-    _exigir_admin(usuario)
+    _exigir_admin_ou_gestor(usuario)
     db_admin = get_supabase_admin()
     await financeiro_service.deletar_despesa(despesa_id, db_admin, excluir_futuras=excluir_futuras)
     await registrar_auditoria(
