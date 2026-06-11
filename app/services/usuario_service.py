@@ -3,7 +3,7 @@ MX Seguros — DRE-IA | Serviço de gerenciamento de usuários.
 
 Criação requer admin client (Supabase Auth + tabela usuarios).
 Atualização/listagem usa o client do usuário (RLS aplica filtros).
-Gestor não pode criar/promover admin ou contador.
+Admin e Gestor têm as mesmas permissões de CRUD sobre usuários.
 """
 from __future__ import annotations
 
@@ -17,17 +17,6 @@ from app.auth import UsuarioAtual
 from app.models.schemas import UsuarioCreate, UsuarioItem, UsuarioUpdate
 
 logger = logging.getLogger(__name__)
-
-_ROLES_RESTRICTOS = ("admin", "contador")
-
-
-def _checar_escalada_de_privilegio(solicitante: UsuarioAtual, role_alvo: str | None) -> None:
-    """Gestor não pode criar nem promover usuários para admin ou contador."""
-    if solicitante.role == "gestor" and role_alvo in _ROLES_RESTRICTOS:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Gestor não pode atribuir role 'admin' ou 'contador'.",
-        )
 
 
 async def listar_usuarios(db: Client) -> list[UsuarioItem]:
@@ -82,8 +71,6 @@ async def criar_usuario(
     solicitante: UsuarioAtual,
     db_admin: Client,
 ) -> UsuarioItem:
-    _checar_escalada_de_privilegio(solicitante, payload.role)
-
     # 1. Cria no Supabase Auth — se já existe, recupera o user_id existente
     user_id: str | None = None
     try:
@@ -141,8 +128,6 @@ async def atualizar_usuario(
     solicitante: UsuarioAtual,
     db: Client,
 ) -> UsuarioItem:
-    _checar_escalada_de_privilegio(solicitante, payload.role)
-
     dados = {k: v for k, v in payload.model_dump().items() if k in payload.model_fields_set}
 
     # Se a role foi alterada e permissions não foi enviado, recalcula o default da nova role
