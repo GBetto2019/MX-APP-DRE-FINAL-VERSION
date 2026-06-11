@@ -93,19 +93,19 @@ async def atualizar_usuario(
 @router.delete(
     "/{usuario_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Desativar usuário / soft-delete (admin)",
+    summary="Excluir usuário permanentemente (admin/gestor)",
 )
-async def desativar_usuario(
+async def excluir_usuario(
     request: Request,
     usuario_id: UUID,
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     if usuario.role not in ("admin", "gestor"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas Admin ou Gestor pode desativar usuários.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas Admin ou Gestor pode excluir usuários.")
     db_admin = get_supabase_admin()
-    await usuario_service.desativar_usuario(usuario_id, usuario.user_id, db_admin, db_admin)
+    await usuario_service.excluir_usuario(usuario_id, usuario.user_id, db_admin)
     await registrar_auditoria(
-        usuario, "desativar_usuario", {"usuario_id": str(usuario_id)},
+        usuario, "excluir_usuario", {"usuario_id": str(usuario_id)},
         request.client.host if request.client else None,
         db_admin,
     )

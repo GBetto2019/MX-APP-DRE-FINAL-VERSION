@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useUser } from '@/contexts/UserContext'
 import { api } from '@/lib/api'
-import { Badge } from '@/components/ui/Badge'
 import type { Role, Permissions } from '@/types'
 import { getDefaultPermissions } from '@/types'
 
@@ -31,10 +30,10 @@ function Chip({ label, cor }: { label: string; cor: string }) {
 function AtivoChip({ ativo }: { ativo: boolean }) {
   return <Chip label={ativo ? 'Ativo' : 'Inativo'} cor={ativo ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'} />
 }
-function BtnToggle({ ativo, onClick }: { ativo: boolean; onClick: () => void }) {
+function BtnExcluir({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`text-xs hover:underline ${ativo ? 'text-gray-400' : 'text-green-600'}`}>
-      {ativo ? 'Desativar' : 'Ativar'}
+    <button onClick={onClick} className="text-xs text-red-500 hover:text-red-700 hover:underline">
+      Excluir
     </button>
   )
 }
@@ -62,6 +61,7 @@ const TELAS_CONFIG: Array<{
     { key: 'visualizar', label: 'Ver' },
     { key: 'criar',      label: 'Criar' },
     { key: 'editar',     label: 'Editar' },
+    { key: 'deletar',    label: 'Deletar' },
   ]},
 ]
 
@@ -117,13 +117,11 @@ function PermissoesSelector({
 function ModalEdicaoUsuario({
   usuario,
   token,
-  isAdmin,
   onSalvo,
   onFechar,
 }: {
   usuario: UsuarioItem
   token: string
-  isAdmin: boolean
   onSalvo: () => void
   onFechar: () => void
 }) {
@@ -170,37 +168,24 @@ function ModalEdicaoUsuario({
             <label className="mb-1 block text-xs font-medium text-gray-600">E-mail</label>
             <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">{usuario.email}</p>
           </div>
-
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Nome</label>
-            <input
-              required
-              value={form.nome}
-              onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-              className={inputCls}
-            />
+            <input required value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} className={inputCls} />
           </div>
-
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Perfil</label>
             <select value={form.role} onChange={e => handleRoleChange(e.target.value as Role)} className={selectCls}>
               <option value="comercial">Comercial</option>
               <option value="contador">Contador</option>
               <option value="gestor">Gestor</option>
-              {isAdmin && <option value="admin">Admin</option>}
+              <option value="admin">Admin</option>
             </select>
           </div>
-
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Permissões de Acesso</label>
-            <PermissoesSelector
-              permissions={form.permissions}
-              onChange={p => setForm(f => ({ ...f, permissions: p }))}
-            />
+            <PermissoesSelector permissions={form.permissions} onChange={p => setForm(f => ({ ...f, permissions: p }))} />
           </div>
-
           {erro && <p className="text-xs text-red-600">{erro}</p>}
-
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onFechar}
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
@@ -218,14 +203,14 @@ function ModalEdicaoUsuario({
 }
 
 // ── Seção: Usuários ────────────────────────────────────────────
-function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
-  const isAdmin = role === 'admin' || role === 'gestor'
+function SecaoUsuarios({ token, role, podeExcluir }: { token: string; role: Role; podeExcluir: boolean }) {
   const isAdminOuGestor = role === 'admin' || role === 'gestor'
 
   const [items, setItems] = useState<UsuarioItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
   const [editandoUsuario, setEditandoUsuario] = useState<UsuarioItem | null>(null)
+  const [confirmExcluir, setConfirmExcluir] = useState<UsuarioItem | null>(null)
   const [form, setForm] = useState({
     nome: '', email: '', senha: '', role: 'comercial' as Role,
     permissions: getDefaultPermissions('comercial'),
@@ -246,11 +231,8 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
     setCriando(true); setErro(null)
     try {
       await api.post('/usuarios', token, {
-        nome:        form.nome,
-        email:       form.email,
-        senha:       form.senha,
-        role:        form.role,
-        permissions: form.permissions,
+        nome: form.nome, email: form.email, senha: form.senha,
+        role: form.role, permissions: form.permissions,
       })
       setForm({ nome: '', email: '', senha: '', role: 'comercial', permissions: getDefaultPermissions('comercial') })
       carregar()
@@ -258,9 +240,9 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
     finally { setCriando(false) }
   }
 
-  async function toggle(u: UsuarioItem) {
-    if (!isAdminOuGestor) return
-    await api.patch(`/usuarios/${u.id}`, token, { ativo: !u.ativo })
+  async function excluir(u: UsuarioItem) {
+    await api.delete(`/usuarios/${u.id}`, token)
+    setConfirmExcluir(null)
     carregar()
   }
 
@@ -276,14 +258,33 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
         <ModalEdicaoUsuario
           usuario={editandoUsuario}
           token={token}
-          isAdmin={isAdmin}
           onSalvo={() => { setEditandoUsuario(null); carregar() }}
           onFechar={() => setEditandoUsuario(null)}
         />
       )}
 
+      {confirmExcluir && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-sm font-semibold text-gray-800">Excluir usuário?</h3>
+            <p className="mb-5 text-sm text-gray-500">
+              <strong>{confirmExcluir.nome}</strong> será excluído permanentemente e não poderá mais acessar o sistema.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmExcluir(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={() => excluir(confirmExcluir)}
+                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700">
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-5">
-        {/* Formulário de criação (apenas admin/gestor) */}
         {isAdminOuGestor && (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Usuário</h3>
@@ -298,14 +299,12 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
                 <option value="comercial">Comercial</option>
                 <option value="contador">Contador</option>
                 <option value="gestor">Gestor</option>
-                {isAdmin && <option value="admin">Admin</option>}
+                <option value="admin">Admin</option>
               </select>
-
               <PermissoesSelector
                 permissions={form.permissions}
                 onChange={p => setForm(f => ({ ...f, permissions: p }))}
               />
-
               <div className="col-span-1 flex items-center gap-3 sm:col-span-2 lg:col-span-4">
                 {erro && <p className="text-xs text-red-600">{erro}</p>}
                 <button type="submit" disabled={criando}
@@ -317,7 +316,6 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
           </div>
         )}
 
-        {/* Lista */}
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           {loading ? (
             <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
@@ -343,11 +341,9 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
                       <td className="px-4 py-2.5 text-right">
                         <span className="inline-flex gap-3">
                           <button onClick={() => setEditandoUsuario(u)}
-                            className="text-xs text-blue-500 hover:underline">
-                            Editar
-                          </button>
-                          {isAdminOuGestor && (
-                            <BtnToggle ativo={u.ativo} onClick={() => toggle(u)} />
+                            className="text-xs text-blue-500 hover:underline">Editar</button>
+                          {podeExcluir && (
+                            <BtnExcluir onClick={() => setConfirmExcluir(u)} />
                           )}
                         </span>
                       </td>
@@ -367,20 +363,21 @@ function SecaoUsuarios({ token, role }: { token: string; role: Role }) {
 }
 
 // ── Seção: Tipos de Lançamento ─────────────────────────────────
-function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar: boolean; podeEditar: boolean }) {
+function SecaoTipos({ token, podeCriar, podeEditar, podeExcluir }: {
+  token: string; podeCriar: boolean; podeEditar: boolean; podeExcluir: boolean
+}) {
   const [items, setItems] = useState<TipoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [confirmExcluir, setConfirmExcluir] = useState<TipoItem | null>(null)
   const [form, setForm] = useState({ nome: '', natureza: 'despesa', categoria: '', custo_tipo: '' })
   const [editForm, setEditForm] = useState({ nome: '', categoria: '', custo_tipo: '' })
   const [erro, setErro] = useState<string | null>(null)
 
   const carregar = useCallback(() => {
     api.get<TipoItem[]>('/configuracoes/tipos', token)
-      .then(setItems)
-      .catch(() => {})
-      .finally(() => setLoading(false))
+      .then(setItems).catch(() => {}).finally(() => setLoading(false))
   }, [token])
 
   useEffect(() => { carregar() }, [carregar])
@@ -406,9 +403,9 @@ function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar
     setEditId(null); carregar()
   }
 
-  async function toggleTipo(t: TipoItem) {
-    await api.put(`/configuracoes/tipos/${t.id}`, token, { ativo: !t.ativo })
-    carregar()
+  async function excluir(t: TipoItem) {
+    await api.delete(`/configuracoes/tipos/${t.id}`, token)
+    setConfirmExcluir(null); carregar()
   }
 
   function iniciarEdicao(t: TipoItem) {
@@ -417,12 +414,28 @@ function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar
   }
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
-
   const despesas = items.filter(t => t.natureza === 'despesa')
   const receitas = items.filter(t => t.natureza === 'receita')
 
   return (
     <div className="space-y-5">
+      {confirmExcluir && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-sm font-semibold text-gray-800">Excluir tipo?</h3>
+            <p className="mb-5 text-sm text-gray-500">
+              <strong>{confirmExcluir.nome}</strong> será excluído permanentemente.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmExcluir(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => excluir(confirmExcluir)}
+                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700">Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {podeCriar && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Tipo</h3>
@@ -456,9 +469,7 @@ function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar
           <div className="border-b border-gray-100 px-4 py-2.5">
             <h3 className={`text-xs font-semibold uppercase tracking-wide ${grupo.cor}`}>{grupo.label}</h3>
           </div>
-          {loading ? (
-            <div className="py-6 text-center text-sm text-gray-400">Carregando…</div>
-          ) : (
+          {loading ? <div className="py-6 text-center text-sm text-gray-400">Carregando…</div> : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-medium text-gray-500">
@@ -466,7 +477,7 @@ function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar
                   <th className="px-4 py-2.5">Categoria</th>
                   <th className="px-4 py-2.5">Custo</th>
                   <th className="px-4 py-2.5">Status</th>
-                  {podeEditar && <th className="px-4 py-2.5 text-right">Ações</th>}
+                  {(podeEditar || podeExcluir) && <th className="px-4 py-2.5 text-right">Ações</th>}
                 </tr>
               </thead>
               <tbody>
@@ -504,11 +515,13 @@ function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar
                         <td className="px-4 py-2.5 text-gray-500">{t.categoria ?? '—'}</td>
                         <td className="px-4 py-2.5 capitalize text-gray-500">{t.custo_tipo ?? '—'}</td>
                         <td className="px-4 py-2.5"><AtivoChip ativo={t.ativo} /></td>
-                        {podeEditar && (
+                        {(podeEditar || podeExcluir) && (
                           <td className="px-4 py-2.5 text-right">
                             <span className="inline-flex gap-3">
-                              <button onClick={() => iniciarEdicao(t)} className="text-xs text-blue-500 hover:underline">Editar</button>
-                              <BtnToggle ativo={t.ativo} onClick={() => toggleTipo(t)} />
+                              {podeEditar && (
+                                <button onClick={() => iniciarEdicao(t)} className="text-xs text-blue-500 hover:underline">Editar</button>
+                              )}
+                              {podeExcluir && <BtnExcluir onClick={() => setConfirmExcluir(t)} />}
                             </span>
                           </td>
                         )}
@@ -529,11 +542,14 @@ function SecaoTipos({ token, podeCriar, podeEditar }: { token: string; podeCriar
 }
 
 // ── Seção: Bancos ──────────────────────────────────────────────
-function SecaoBancos({ token, podeCriar, podeEditar }: { token: string; podeCriar: boolean; podeEditar: boolean }) {
+function SecaoBancos({ token, podeCriar, podeEditar, podeExcluir }: {
+  token: string; podeCriar: boolean; podeEditar: boolean; podeExcluir: boolean
+}) {
   const [items, setItems] = useState<BancoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [confirmExcluir, setConfirmExcluir] = useState<BancoItem | null>(null)
   const [nome, setNome] = useState('')
   const [editNome, setEditNome] = useState('')
   const [erro, setErro] = useState<string | null>(null)
@@ -560,13 +576,30 @@ function SecaoBancos({ token, podeCriar, podeEditar }: { token: string; podeCria
     setEditId(null); carregar()
   }
 
-  async function toggleBanco(b: BancoItem) {
-    await api.put(`/configuracoes/bancos/${b.id}`, token, { ativo: !b.ativo })
-    carregar()
+  async function excluir(b: BancoItem) {
+    await api.delete(`/configuracoes/bancos/${b.id}`, token)
+    setConfirmExcluir(null); carregar()
   }
 
   return (
     <div className="space-y-5">
+      {confirmExcluir && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-sm font-semibold text-gray-800">Excluir banco?</h3>
+            <p className="mb-5 text-sm text-gray-500">
+              <strong>{confirmExcluir.nome}</strong> será excluído permanentemente.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmExcluir(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => excluir(confirmExcluir)}
+                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700">Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {podeCriar && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Banco</h3>
@@ -583,15 +616,13 @@ function SecaoBancos({ token, podeCriar, podeEditar }: { token: string; podeCria
       )}
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        {loading ? (
-          <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
-        ) : (
+        {loading ? <div className="py-10 text-center text-sm text-gray-400">Carregando…</div> : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Status</th>
-                {podeEditar && <th className="px-4 py-3 text-right">Ações</th>}
+                {(podeEditar || podeExcluir) && <th className="px-4 py-3 text-right">Ações</th>}
               </tr>
             </thead>
             <tbody>
@@ -615,12 +646,14 @@ function SecaoBancos({ token, podeCriar, podeEditar }: { token: string; podeCria
                     <>
                       <td className="px-4 py-2.5 font-medium text-gray-800">{b.nome}</td>
                       <td className="px-4 py-2.5"><AtivoChip ativo={b.ativo} /></td>
-                      {podeEditar && (
+                      {(podeEditar || podeExcluir) && (
                         <td className="px-4 py-2.5 text-right">
                           <span className="inline-flex gap-3">
-                            <button onClick={() => { setEditId(b.id); setEditNome(b.nome) }}
-                              className="text-xs text-blue-500 hover:underline">Editar</button>
-                            <BtnToggle ativo={b.ativo} onClick={() => toggleBanco(b)} />
+                            {podeEditar && (
+                              <button onClick={() => { setEditId(b.id); setEditNome(b.nome) }}
+                                className="text-xs text-blue-500 hover:underline">Editar</button>
+                            )}
+                            {podeExcluir && <BtnExcluir onClick={() => setConfirmExcluir(b)} />}
                           </span>
                         </td>
                       )}
@@ -640,11 +673,14 @@ function SecaoBancos({ token, podeCriar, podeEditar }: { token: string; podeCria
 }
 
 // ── Seção: Centros de Custo ────────────────────────────────────
-function SecaoCentros({ token, podeCriar, podeEditar }: { token: string; podeCriar: boolean; podeEditar: boolean }) {
+function SecaoCentros({ token, podeCriar, podeEditar, podeExcluir }: {
+  token: string; podeCriar: boolean; podeEditar: boolean; podeExcluir: boolean
+}) {
   const [items, setItems] = useState<CentroItem[]>([])
   const [loading, setLoading] = useState(true)
   const [criando, setCriando] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [confirmExcluir, setConfirmExcluir] = useState<CentroItem | null>(null)
   const [form, setForm] = useState({ nome: '', codigo: '' })
   const [editNome, setEditNome] = useState('')
   const [erro, setErro] = useState<string | null>(null)
@@ -671,15 +707,32 @@ function SecaoCentros({ token, podeCriar, podeEditar }: { token: string; podeCri
     setEditId(null); carregar()
   }
 
-  async function toggleCentro(c: CentroItem) {
-    await api.put(`/configuracoes/centros-custo/${c.id}`, token, { ativo: !c.ativo })
-    carregar()
+  async function excluir(c: CentroItem) {
+    await api.delete(`/configuracoes/centros-custo/${c.id}`, token)
+    setConfirmExcluir(null); carregar()
   }
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   return (
     <div className="space-y-5">
+      {confirmExcluir && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-sm font-semibold text-gray-800">Excluir centro de custo?</h3>
+            <p className="mb-5 text-sm text-gray-500">
+              <strong>{confirmExcluir.nome}</strong> será excluído permanentemente.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmExcluir(null)}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => excluir(confirmExcluir)}
+                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700">Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {podeCriar && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Novo Centro de Custo</h3>
@@ -698,16 +751,14 @@ function SecaoCentros({ token, podeCriar, podeEditar }: { token: string; podeCri
       )}
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        {loading ? (
-          <div className="py-10 text-center text-sm text-gray-400">Carregando…</div>
-        ) : (
+        {loading ? <div className="py-10 text-center text-sm text-gray-400">Carregando…</div> : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Código</th>
                 <th className="px-4 py-3">Status</th>
-                {podeEditar && <th className="px-4 py-3 text-right">Ações</th>}
+                {(podeEditar || podeExcluir) && <th className="px-4 py-3 text-right">Ações</th>}
               </tr>
             </thead>
             <tbody>
@@ -733,12 +784,14 @@ function SecaoCentros({ token, podeCriar, podeEditar }: { token: string; podeCri
                       <td className="px-4 py-2.5 font-medium text-gray-800">{c.nome}</td>
                       <td className="px-4 py-2.5 text-gray-500">{c.codigo}</td>
                       <td className="px-4 py-2.5"><AtivoChip ativo={c.ativo} /></td>
-                      {podeEditar && (
+                      {(podeEditar || podeExcluir) && (
                         <td className="px-4 py-2.5 text-right">
                           <span className="inline-flex gap-3">
-                            <button onClick={() => { setEditId(c.id); setEditNome(c.nome) }}
-                              className="text-xs text-blue-500 hover:underline">Editar</button>
-                            <BtnToggle ativo={c.ativo} onClick={() => toggleCentro(c)} />
+                            {podeEditar && (
+                              <button onClick={() => { setEditId(c.id); setEditNome(c.nome) }}
+                                className="text-xs text-blue-500 hover:underline">Editar</button>
+                            )}
+                            {podeExcluir && <BtnExcluir onClick={() => setConfirmExcluir(c)} />}
                           </span>
                         </td>
                       )}
@@ -763,20 +816,19 @@ export default function ConfiguracoesPage() {
   const { role, permissions } = useUser()
 
   const isAdminOuGestor = role === 'admin' || role === 'gestor'
-  const podeCriar = permissions?.configuracoes?.criar ?? false
-  const podeEditar = permissions?.configuracoes?.editar ?? false
+  const podeCriar   = permissions?.configuracoes?.criar    ?? false
+  const podeEditar  = permissions?.configuracoes?.editar   ?? false
+  const podeExcluir = permissions?.configuracoes?.deletar  ?? false
 
-  // Abas visíveis: Usuários apenas para admin/gestor; demais para todos
-  type Aba = 'usuarios' | 'tipos' | 'bancos' | 'centros'
   const ABAS: { id: Aba; label: string; desc: string }[] = [
     ...(isAdminOuGestor ? [{ id: 'usuarios' as Aba, label: 'Usuários', desc: 'Gerencie os acessos ao sistema' }] : []),
-    { id: 'tipos',   label: 'Tipos de Lançamento',  desc: 'Categorias de despesas e receitas' },
-    { id: 'bancos',  label: 'Bancos',               desc: 'Contas bancárias da corretora' },
-    { id: 'centros', label: 'Centros de Custo',     desc: 'Unidades e filiais' },
+    { id: 'tipos',   label: 'Tipos de Lançamento', desc: 'Categorias de despesas e receitas' },
+    { id: 'bancos',  label: 'Bancos',              desc: 'Contas bancárias da corretora' },
+    { id: 'centros', label: 'Centros de Custo',    desc: 'Unidades e filiais' },
   ]
 
+  // Aba Usuários sempre ativa ao entrar; troca para tipos se não for admin/gestor
   const [aba, setAba] = useState<Aba>('usuarios')
-
   useEffect(() => {
     if (role && !isAdminOuGestor) setAba('tipos')
   }, [role]) // eslint-disable-line
@@ -795,15 +847,10 @@ export default function ConfiguracoesPage() {
       {/* Tabs */}
       <div className="grid grid-cols-2 gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm sm:flex">
         {ABAS.map(a => (
-          <button
-            key={a.id}
-            onClick={() => setAba(a.id)}
+          <button key={a.id} onClick={() => setAba(a.id)}
             className={`rounded-lg px-2 py-2.5 text-xs font-medium transition-colors sm:flex-1 sm:px-3 sm:text-sm ${
-              aba === a.id
-                ? 'bg-[#071934] text-white shadow-sm'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-            }`}
-          >
+              aba === a.id ? 'bg-[#071934] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}>
             {a.label}
           </button>
         ))}
@@ -811,10 +858,18 @@ export default function ConfiguracoesPage() {
 
       <p className="text-xs text-gray-400">{abaAtual.desc}</p>
 
-      {aba === 'usuarios' && isAdminOuGestor && <SecaoUsuarios token={token} role={role} />}
-      {aba === 'tipos'    && <SecaoTipos    token={token} podeCriar={podeCriar} podeEditar={podeEditar} />}
-      {aba === 'bancos'   && <SecaoBancos   token={token} podeCriar={podeCriar} podeEditar={podeEditar} />}
-      {aba === 'centros'  && <SecaoCentros  token={token} podeCriar={podeCriar} podeEditar={podeEditar} />}
+      {aba === 'usuarios' && isAdminOuGestor && (
+        <SecaoUsuarios token={token} role={role} podeExcluir={podeExcluir} />
+      )}
+      {aba === 'tipos' && (
+        <SecaoTipos token={token} podeCriar={podeCriar} podeEditar={podeEditar} podeExcluir={podeExcluir} />
+      )}
+      {aba === 'bancos' && (
+        <SecaoBancos token={token} podeCriar={podeCriar} podeEditar={podeEditar} podeExcluir={podeExcluir} />
+      )}
+      {aba === 'centros' && (
+        <SecaoCentros token={token} podeCriar={podeCriar} podeEditar={podeEditar} podeExcluir={podeExcluir} />
+      )}
     </div>
   )
 }

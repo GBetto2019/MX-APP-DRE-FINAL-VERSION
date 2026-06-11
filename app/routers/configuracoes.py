@@ -90,6 +90,20 @@ async def atualizar_banco(
     return await financeiro_service.atualizar_banco(banco_id, payload, get_supabase_admin())
 
 
+@router.delete(
+    "/bancos/{banco_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Excluir banco (admin)",
+)
+async def excluir_banco(
+    request: Request,
+    banco_id: UUID,
+    usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
+):
+    _exigir_admin(usuario)
+    await financeiro_service.excluir_banco(banco_id, get_supabase_admin())
+
+
 # ── CENTROS DE CUSTO ──────────────────────────────────────────
 
 @router.get(
@@ -141,6 +155,20 @@ async def atualizar_centro(
 ):
     _exigir_admin(usuario)
     return await financeiro_service.atualizar_centro_custo(centro_id, payload, get_supabase_admin())
+
+
+@router.delete(
+    "/centros-custo/{centro_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Excluir centro de custo (admin)",
+)
+async def excluir_centro(
+    request: Request,
+    centro_id: UUID,
+    usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
+):
+    _exigir_admin(usuario)
+    await financeiro_service.excluir_centro_custo(centro_id, get_supabase_admin())
 
 
 # ── TIPOS DE LANÇAMENTO ───────────────────────────────────────
@@ -205,12 +233,12 @@ async def atualizar_tipo(
 @router.delete(
     "/tipos/{tipo_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Desativar tipo de lançamento (admin)",
+    summary="Excluir tipo de lançamento (admin)",
 )
-async def desativar_tipo(
+async def excluir_tipo(
     request: Request,
     tipo_id: UUID,
     usuario: Annotated[UsuarioAtual, Depends(obter_usuario_atual)] = None,
 ):
     _exigir_admin(usuario)
-    await financeiro_service.desativar_tipo_lancamento(tipo_id, get_supabase_admin())
+    await financeiro_service.excluir_tipo_lancamento(tipo_id, get_supabase_admin())

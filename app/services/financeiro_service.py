@@ -56,6 +56,10 @@ async def atualizar_banco(banco_id: UUID, payload: BancoUpdate, db: Client) -> B
     return BancoItem(**row)
 
 
+async def excluir_banco(banco_id: UUID, db: Client) -> None:
+    db.table("bancos").delete().eq("id", str(banco_id)).execute()
+
+
 # ── Centros de Custo ──────────────────────────────────────────
 
 async def listar_centros_custo(db: Client) -> list[CentroCustoItem]:
@@ -79,6 +83,10 @@ async def atualizar_centro_custo(
     resp = db.table("centros_custo").update(dados).eq("id", str(centro_id)).execute()
     row = resp.data[0]
     return CentroCustoItem(**row)
+
+
+async def excluir_centro_custo(centro_id: UUID, db: Client) -> None:
+    db.table("centros_custo").delete().eq("id", str(centro_id)).execute()
 
 
 # ── Tipos de Lançamento ───────────────────────────────────────
@@ -117,8 +125,8 @@ async def atualizar_tipo_lancamento(
     return TipoLancamentoItem(**row)
 
 
-async def desativar_tipo_lancamento(tipo_id: UUID, db: Client) -> None:
-    db.table("tipos_lancamento").update({"ativo": False}).eq("id", str(tipo_id)).execute()
+async def excluir_tipo_lancamento(tipo_id: UUID, db: Client) -> None:
+    db.table("tipos_lancamento").delete().eq("id", str(tipo_id)).execute()
 
 
 # ══════════════════════════════════════════════════════════════

@@ -6,7 +6,7 @@ export interface Permissions {
   lancamentos:   { visualizar: boolean; criar: boolean; editar: boolean; deletar: boolean }
   aprovacoes:    { visualizar: boolean; aprovar: boolean }
   assistente:    { visualizar: boolean }
-  configuracoes: { visualizar: boolean; criar: boolean; editar: boolean }
+  configuracoes: { visualizar: boolean; criar: boolean; editar: boolean; deletar: boolean }
 }
 
 export const DEFAULT_PERMISSIONS: Record<Role, Permissions> = {
@@ -16,7 +16,7 @@ export const DEFAULT_PERMISSIONS: Record<Role, Permissions> = {
     lancamentos:   { visualizar: true, criar: true, editar: true, deletar: true },
     aprovacoes:    { visualizar: true, aprovar: true },
     assistente:    { visualizar: true },
-    configuracoes: { visualizar: true, criar: true, editar: true },
+    configuracoes: { visualizar: true, criar: true, editar: true, deletar: true },
   },
   gestor: {
     visao_geral:   { visualizar: true },
@@ -24,7 +24,7 @@ export const DEFAULT_PERMISSIONS: Record<Role, Permissions> = {
     lancamentos:   { visualizar: true, criar: true, editar: true, deletar: false },
     aprovacoes:    { visualizar: true, aprovar: true },
     assistente:    { visualizar: true },
-    configuracoes: { visualizar: true, criar: true, editar: true },
+    configuracoes: { visualizar: true, criar: true, editar: true, deletar: true },
   },
   comercial: {
     visao_geral:   { visualizar: true },
@@ -32,7 +32,7 @@ export const DEFAULT_PERMISSIONS: Record<Role, Permissions> = {
     lancamentos:   { visualizar: true, criar: true, editar: false, deletar: false },
     aprovacoes:    { visualizar: false, aprovar: false },
     assistente:    { visualizar: true },
-    configuracoes: { visualizar: true, criar: false, editar: false },
+    configuracoes: { visualizar: true, criar: false, editar: false, deletar: false },
   },
   contador: {
     visao_geral:   { visualizar: true },
@@ -40,7 +40,7 @@ export const DEFAULT_PERMISSIONS: Record<Role, Permissions> = {
     lancamentos:   { visualizar: true, criar: true, editar: false, deletar: false },
     aprovacoes:    { visualizar: false, aprovar: false },
     assistente:    { visualizar: true },
-    configuracoes: { visualizar: true, criar: false, editar: false },
+    configuracoes: { visualizar: true, criar: false, editar: false, deletar: false },
   },
 }
 

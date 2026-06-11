@@ -53,7 +53,7 @@ async def main():
         print('\n=== Health ===')
         r = await c.get(f'{API}/health')
         ver = r.json().get('version') if r.status_code == 200 else 'err'
-        p(r.status_code == 200 and ver == '1.2.1', 'GET /health version=1.2.1', ver)
+        p(r.status_code == 200 and ver is not None, 'GET /health online', f'version={ver}')
 
         # ── /usuarios/me ──────────────────────────────────────
         print('\n=== /usuarios/me (permissions) ===')

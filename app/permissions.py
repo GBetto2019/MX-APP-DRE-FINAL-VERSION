@@ -13,7 +13,7 @@ DEFAULT_PERMISSIONS: dict[str, dict] = {
         "lancamentos":   {"visualizar": True, "criar": True, "editar": True, "deletar": True},
         "aprovacoes":    {"visualizar": True, "aprovar": True},
         "assistente":    {"visualizar": True},
-        "configuracoes": {"visualizar": True, "criar": True, "editar": True},
+        "configuracoes": {"visualizar": True, "criar": True, "editar": True, "deletar": True},
     },
     "gestor": {
         "visao_geral":   {"visualizar": True},
@@ -21,7 +21,7 @@ DEFAULT_PERMISSIONS: dict[str, dict] = {
         "lancamentos":   {"visualizar": True, "criar": True, "editar": True, "deletar": False},
         "aprovacoes":    {"visualizar": True, "aprovar": True},
         "assistente":    {"visualizar": True},
-        "configuracoes": {"visualizar": True, "criar": True, "editar": True},
+        "configuracoes": {"visualizar": True, "criar": True, "editar": True, "deletar": True},
     },
     "comercial": {
         "visao_geral":   {"visualizar": True},
@@ -29,7 +29,7 @@ DEFAULT_PERMISSIONS: dict[str, dict] = {
         "lancamentos":   {"visualizar": True, "criar": True, "editar": False, "deletar": False},
         "aprovacoes":    {"visualizar": False, "aprovar": False},
         "assistente":    {"visualizar": True},
-        "configuracoes": {"visualizar": True, "criar": False, "editar": False},
+        "configuracoes": {"visualizar": True, "criar": False, "editar": False, "deletar": False},
     },
     "contador": {
         "visao_geral":   {"visualizar": True},
@@ -37,7 +37,7 @@ DEFAULT_PERMISSIONS: dict[str, dict] = {
         "lancamentos":   {"visualizar": True, "criar": True, "editar": False, "deletar": False},
         "aprovacoes":    {"visualizar": False, "aprovar": False},
         "assistente":    {"visualizar": True},
-        "configuracoes": {"visualizar": True, "criar": False, "editar": False},
+        "configuracoes": {"visualizar": True, "criar": False, "editar": False, "deletar": False},
     },
 }
 

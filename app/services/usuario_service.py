@@ -152,24 +152,22 @@ async def atualizar_usuario(
     return UsuarioItem(**resp.data[0])
 
 
-async def desativar_usuario(
+async def excluir_usuario(
     usuario_id: UUID,
     solicitante_id: str,
-    db: Client,
     db_admin: Client,
 ) -> None:
     if str(usuario_id) == solicitante_id:
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail="Admin não pode desativar a própria conta.",
+            detail="Não é possível excluir a própria conta.",
         )
 
-    resp = db.table("usuarios").update({"ativo": False}).eq("id", str(usuario_id)).execute()
+    resp = db_admin.table("usuarios").delete().eq("id", str(usuario_id)).execute()
     if not resp.data:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
 
-    # Bloqueia login no Supabase Auth (876600h ≈ 100 anos)
     try:
-        db_admin.auth.admin.update_user_by_id(str(usuario_id), {"ban_duration": "876600h"})
+        db_admin.auth.admin.delete_user(str(usuario_id))
     except Exception as exc:
-        logger.warning("Perfil desativado no DB mas falha ao banir no Auth %s: %s", usuario_id, exc)
+        logger.warning("Removido do DB mas falha ao excluir do Auth %s: %s", usuario_id, exc)
